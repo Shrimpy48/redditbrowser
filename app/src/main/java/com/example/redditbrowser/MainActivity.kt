@@ -12,11 +12,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, FeedTaskResponse {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
-    private lateinit var data: Array<PostData>
+    private var posts: ArrayList<PostInfo> = ArrayList()
+    private lateinit var taskfetcher: FetchFeedTask
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,11 +25,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-//        val fab: FloatingActionButton = findViewById(R.id.fab)
-//        fab.setOnClickListener { view ->
-//            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                .setAction("Action", null).show()
-//        }
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
         val toggle = ActionBarDrawerToggle(
@@ -40,9 +36,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navView.setNavigationItemSelectedListener(this)
 
         // TODO fetch reddit post data
+        taskfetcher = FetchFeedTask(this)
+        taskfetcher.execute()
 
         viewManager = GridLayoutManager(this, 1)
-        viewAdapter = CardsAdapter(data)
+        viewAdapter = CardsAdapter(posts)
         recyclerView = findViewById<RecyclerView>(R.id.cards_recycler_view).apply {
             setHasFixedSize(true)
             layoutManager = viewManager
@@ -101,4 +99,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
+
+    override fun processFinish(output: ArrayList<ArrayList<PostInfo>>) {
+        if (output.size > 0) {
+            posts = output[0]
+            viewAdapter.notifyDataSetChanged()
+        }
+    }
 }
+
