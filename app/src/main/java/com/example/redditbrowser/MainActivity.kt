@@ -8,8 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.navigation.NavigationView
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, FeedTaskResponse {
@@ -35,11 +35,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         navView.setNavigationItemSelectedListener(this)
 
-        // TODO fetch reddit post data
+        // TODO fetch reddit data
         taskfetcher = FetchFeedTask(this)
-        taskfetcher.execute()
+        taskfetcher.execute(FeedInfo())
 
-        viewManager = GridLayoutManager(this, 1)
+        //viewManager = GridLayoutManager(this, 2)
+        viewManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         viewAdapter = CardsAdapter(posts)
         recyclerView = findViewById<RecyclerView>(R.id.cards_recycler_view).apply {
             setHasFixedSize(true)
@@ -103,7 +104,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun processFinish(output: ArrayList<ArrayList<PostInfo>>) {
         if (output.size > 0) {
             posts = output[0]
-            viewAdapter.notifyDataSetChanged()
+            viewAdapter = CardsAdapter(posts)
+            recyclerView.swapAdapter(viewAdapter, true)
         }
     }
 }
