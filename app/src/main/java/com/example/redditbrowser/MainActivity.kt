@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
     private var posts: ArrayList<PostInfo> = ArrayList()
-    private lateinit var taskfetcher: FetchFeedTask
+    private lateinit var redditfetcher: RedditFetcher
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,11 +35,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         navView.setNavigationItemSelectedListener(this)
 
+        redditfetcher = RedditFetcher()
+
         // TODO fetch reddit data
-        taskfetcher = FetchFeedTask(this)
+        val taskfetcher = FetchFeedTask(this, redditfetcher)
         taskfetcher.execute(FeedInfo())
 
-        //viewManager = GridLayoutManager(this, 2)
         viewManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         viewAdapter = CardsAdapter(posts)
         recyclerView = findViewById<RecyclerView>(R.id.cards_recycler_view).apply {
@@ -47,6 +48,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             layoutManager = viewManager
             adapter = viewAdapter
         }
+        recyclerView.addItemDecoration(CardSpacer(8, 8))
     }
 
     override fun onBackPressed() {

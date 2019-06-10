@@ -1,25 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-                                   android:layout_width="match_parent"
-                                   android:layout_height="wrap_content" xmlns:tools="http://schemas.android.com/tools"
+                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                   xmlns:tools="http://schemas.android.com/tools"
+                                   android:layout_width="match_parent" android:layout_height="wrap_content"
                                    android:id="@+id/card">
     <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" android:id="@+id/card_items">
-        <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
-                android:id="@+id/card_image" android:adjustViewBounds="true"/>
+        <TextView
+                android:text="Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:id="@+id/card_title"/>
         <View
                 android:id="@+id/card_divider"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider"
         />
+        <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
+                android:id="@+id/card_image" android:adjustViewBounds="true"/>
+        <com.google.android.exoplayer2.ui.PlayerView
+                android:layout_width="match_parent"
+                android:layout_height="256dp" android:id="@+id/card_video"
+                app:surface_type="texture_view" app:resize_mode="fixed_width"/>
         <TextView
-                android:text="Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:id="@+id/card_title"/>
+                android:text="Selftext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/card_body"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>
