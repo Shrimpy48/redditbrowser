@@ -1,6 +1,7 @@
 package com.example.redditbrowser
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -11,13 +12,26 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.navigation.NavigationView
+import io.reactivex.Single
+import io.reactivex.SingleObserver
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import okhttp3.Credentials
+import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import retrofit2.converter.gson.GsonConverterFactory
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, FeedTaskResponse {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
     private var posts: ArrayList<PostInfo> = ArrayList()
-    private lateinit var redditfetcher: RedditFetcher
+    private lateinit var apiService: RedditApiService
+    private lateinit var apiServiceOauth: RedditApiService
+    private lateinit var compositeDisposable: CompositeDisposable
+    private lateinit var tokenResp: Single<AuthResponse>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,11 +49,66 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         navView.setNavigationItemSelectedListener(this)
 
-        redditfetcher = RedditFetcher()
+        val retrofit: Retrofit = Retrofit.Builder()
+            .baseUrl("https://www.reddit.com")
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .build()
+        val retrofitOauth: Retrofit = Retrofit.Builder()
+            .baseUrl("https://oauth.reddit.com")
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .build()
+        apiService = retrofit.create(RedditApiService::class.java)
+        apiServiceOauth = retrofitOauth.create(RedditApiService::class.java)
 
-        // TODO fetch reddit data
-        val taskfetcher = FetchFeedTask(this, redditfetcher)
-        taskfetcher.execute(FeedInfo())
+        compositeDisposable = CompositeDisposable()
+
+        tokenResp = apiService.getAuth(
+            Credentials.basic(AuthValues.id, AuthValues.secret),
+            "password",
+            AuthValues.username,
+            AuthValues.password
+        ).cache()
+
+        tokenResp.flatMap { firstResponse -> apiServiceOauth.getMyInfo(firstResponse.tokenType + " " + firstResponse.accessToken) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : SingleObserver<SelfInfo> {
+                override fun onSubscribe(d: Disposable) {
+                    compositeDisposable.add(d)
+                }
+
+                override fun onSuccess(resp: SelfInfo) {
+                    Log.i("Info", resp.name)
+                }
+
+                override fun onError(e: Throwable) {
+                    Log.e("Info", e.localizedMessage)
+                }
+            })
+
+        tokenResp.flatMap { firstResponse -> apiServiceOauth.getMyFrontPage(firstResponse.tokenType + " " + firstResponse.accessToken) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : SingleObserver<SubredditInfoListWrapper> {
+                override fun onSubscribe(d: Disposable) {
+                    compositeDisposable.add(d)
+                }
+
+                override fun onSuccess(resp: SubredditInfoListWrapper) {
+                    val subs = resp.data?.children
+                    val limit = resp.data?.dist
+                    if (limit != null)
+                        for (i in 0 until limit)
+                            if ((subs != null) && (subs[i].data?.name != null))
+                                Log.i("Feed", subs[i].data?.name)
+                }
+
+                override fun onError(e: Throwable) {
+                    Log.e("Feed", e.localizedMessage)
+                }
+            })
 
         viewManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         viewAdapter = CardsAdapter(posts)
@@ -103,12 +172,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return true
     }
 
-    override fun processFinish(output: ArrayList<ArrayList<PostInfo>>) {
-        if (output.size > 0) {
-            posts = output[0]
-            viewAdapter = CardsAdapter(posts)
-            recyclerView.swapAdapter(viewAdapter, true)
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        if (!compositeDisposable.isDisposed) compositeDisposable.dispose()
     }
 }
 

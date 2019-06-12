@@ -2,8 +2,14 @@ package com.example.redditbrowser
 
 import android.net.Uri
 
+
 class RedditFetcher {
-    fun fetchPosts(info: FeedInfo): ArrayList<PostInfo> {
+
+    fun ParsePost(): PostInfo {
+        return PostInfo("", PostType.URL)
+    }
+
+    fun fetchPosts() {
         // TODO
         val out = ArrayList<PostInfo>()
         out.add(
@@ -117,6 +123,5 @@ class RedditFetcher {
                 new_content_url = Uri.parse("https://giant.gfycat.com/CloseCrazyFowl.mp4")
             )
         )  // from https://gfycat.com/closecrazyfowl
-        return out
     }
 }
