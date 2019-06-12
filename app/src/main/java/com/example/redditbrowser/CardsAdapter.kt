@@ -1,6 +1,5 @@
 package com.example.redditbrowser
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View.GONE
 import android.view.View.VISIBLE
@@ -14,11 +13,15 @@ import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.Player.REPEAT_MODE_ONE
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ExtractorMediaSource
+import com.google.android.exoplayer2.source.dash.DashMediaSource
+import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
+import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.card.view.*
 
-class CardsAdapter(private val info: ArrayList<PostInfo>) : RecyclerView.Adapter<CardsAdapter.ViewHolder>() {
+class CardsAdapter(private val info: ArrayList<ProcessedPost>) : RecyclerView.Adapter<CardsAdapter.ViewHolder>() {
 
     class ViewHolder(val cardView: CardView) : RecyclerView.ViewHolder(cardView) {
         var player: SimpleExoPlayer? = null
@@ -39,7 +42,7 @@ class CardsAdapter(private val info: ArrayList<PostInfo>) : RecyclerView.Adapter
                 holder.cardView.card_video.visibility = GONE
                 holder.cardView.card_body.visibility = GONE
                 Glide.with(holder.cardView.card_image.context)
-                    .load(info[position].contenturl)
+                    .load(info[position].contentUrl)
                     .into(holder.cardView.card_image)
                 if (holder.player != null) {
                     holder.player?.release()
@@ -52,7 +55,6 @@ class CardsAdapter(private val info: ArrayList<PostInfo>) : RecyclerView.Adapter
                 holder.cardView.card_body.visibility = GONE
                 Glide.with(holder.cardView.card_image.context)
                     .clear(holder.cardView.card_image)
-                Log.i("Video", "URL: ${info[position].contenturl}")
                 holder.player = ExoPlayerFactory.newSimpleInstance(
                     DefaultRenderersFactory(holder.cardView.card_video.context),
                     DefaultTrackSelector(), DefaultLoadControl()
@@ -63,8 +65,42 @@ class CardsAdapter(private val info: ArrayList<PostInfo>) : RecyclerView.Adapter
                 holder.player?.repeatMode = REPEAT_MODE_ONE
                 holder.cardView.card_video.controllerShowTimeoutMs = 1000
                 holder.cardView.card_video.hideController()
-                val mediaSource = ExtractorMediaSource.Factory(DefaultHttpDataSourceFactory("redditbrowser"))
-                    .createMediaSource(info[position].contenturl)
+                val mediaSource = ExtractorMediaSource.Factory(
+                    DefaultHttpDataSourceFactory(
+                        Util.getUserAgent(
+                            holder.cardView.card_video.context,
+                            "RedditBrowser"
+                        )
+                    )
+                )
+                    .createMediaSource(info[position].contentUrl)
+                holder.player?.prepare(mediaSource, true, false)
+            }
+            info[position].type == PostType.VIDEO_DASH -> {
+                holder.cardView.card_image.visibility = GONE
+                holder.cardView.card_video.visibility = VISIBLE
+                holder.cardView.card_body.visibility = GONE
+                Glide.with(holder.cardView.card_image.context)
+                    .clear(holder.cardView.card_image)
+                holder.player = ExoPlayerFactory.newSimpleInstance(
+                    DefaultRenderersFactory(holder.cardView.card_video.context),
+                    DefaultTrackSelector(), DefaultLoadControl()
+                )
+                holder.cardView.card_video.player = holder.player
+                holder.player?.playWhenReady = true
+                holder.player?.seekTo(0, 0)
+                holder.player?.repeatMode = REPEAT_MODE_ONE
+                holder.cardView.card_video.controllerShowTimeoutMs = 1000
+                holder.cardView.card_video.hideController()
+                val dataSourceFactory = DefaultHttpDataSourceFactory(
+                    Util.getUserAgent(
+                        holder.cardView.card_video.context,
+                        "RedditBrowser"
+                    )
+                ) as DataSource.Factory
+                val mediaSource =
+                    DashMediaSource.Factory(DefaultDashChunkSource.Factory(dataSourceFactory), dataSourceFactory)
+                        .createMediaSource(info[position].contentUrl)
                 holder.player?.prepare(mediaSource, true, false)
             }
             info[position].type == PostType.TEXT -> {
@@ -89,7 +125,7 @@ class CardsAdapter(private val info: ArrayList<PostInfo>) : RecyclerView.Adapter
                     holder.player?.release()
                     holder.player = null
                 }
-                holder.cardView.card_body.text = info[position].contenturl.toString()
+                holder.cardView.card_body.text = info[position].contentUrl.toString()
             }
         }
     }

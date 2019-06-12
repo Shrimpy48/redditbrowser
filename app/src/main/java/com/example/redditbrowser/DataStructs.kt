@@ -3,13 +3,13 @@ package com.example.redditbrowser
 import android.net.Uri
 
 
-class PostInfo(new_title: String, new_type: PostType, new_body: String? = null, new_content_url: Uri? = null) {
+class ProcessedPost(new_title: String, new_type: PostType, new_body: String? = null, new_content_url: Uri? = null) {
     var title: String = new_title
     var type: PostType = new_type
     var body: String? = new_body
-    var contenturl: Uri? = new_content_url
+    var contentUrl: Uri? = new_content_url
 }
 
 enum class PostType {
-    IMAGE, VIDEO, TEXT, URL
+    IMAGE, VIDEO, VIDEO_DASH, TEXT, URL
 }

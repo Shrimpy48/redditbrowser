@@ -23,5 +23,5 @@ interface RedditApiService {
 
     @Headers("User-Agent: ${AuthValues.userAgent}")
     @GET("/")
-    fun getMyFrontPage(@Header("Authorization") token: String): Single<SubredditInfoListWrapper>
+    fun getMyFrontPage(@Header("Authorization") token: String): Single<PostInfoListWrapper>
 }
