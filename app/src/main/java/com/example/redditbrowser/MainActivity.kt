@@ -27,7 +27,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
-    private var posts: ArrayList<ProcessedPost> = ArrayList()
     private lateinit var apiService: RedditApiService
     private lateinit var apiServiceOauth: RedditApiService
     private lateinit var compositeDisposable: CompositeDisposable
@@ -88,31 +87,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             })
 
-        tokenResp.flatMap { firstResponse -> apiServiceOauth.getMyFrontPage(firstResponse.tokenType + " " + firstResponse.accessToken) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(object : SingleObserver<PostInfoListWrapper> {
-                override fun onSubscribe(d: Disposable) {
-                    compositeDisposable.add(d)
-                }
-
-                override fun onSuccess(resp: PostInfoListWrapper) {
-                    val posts = resp.data?.children
-                    val numPosts = resp.data?.dist
-                    if (posts != null && numPosts != null)
-                        for (i in 0 until numPosts) {
-                            val parsed = RedditFetcher.ParsePost(posts[i].data!!)
-                            Log.i("Feed", parsed?.title)
-                        }
-                }
-
-                override fun onError(e: Throwable) {
-                    Log.e("Feed", e.localizedMessage)
-                }
-            })
-
         viewManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-        viewAdapter = CardsAdapter(posts)
+        viewAdapter = CardsAdapter(apiServiceOauth, tokenResp)
         recyclerView = findViewById<RecyclerView>(R.id.cards_recycler_view).apply {
             setHasFixedSize(true)
             layoutManager = viewManager

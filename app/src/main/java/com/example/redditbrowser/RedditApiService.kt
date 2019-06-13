@@ -24,4 +24,8 @@ interface RedditApiService {
     @Headers("User-Agent: ${AuthValues.userAgent}")
     @GET("/")
     fun getMyFrontPage(@Header("Authorization") token: String): Single<PostInfoListWrapper>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("/")
+    fun getMyFrontPage(@Header("Authorization") token: String, @Query("after") after: String?, @Query("count") count: Int): Single<PostInfoListWrapper>
 }

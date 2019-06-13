@@ -21,14 +21,14 @@
         <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
-                android:id="@+id/card_image" android:adjustViewBounds="true"/>
+                android:id="@+id/card_image" android:adjustViewBounds="true" android:visibility="gone"/>
         <com.google.android.exoplayer2.ui.PlayerView
                 android:layout_width="match_parent"
                 android:layout_height="256dp" android:id="@+id/card_video"
-                app:surface_type="texture_view" app:resize_mode="fixed_width"/>
+                app:surface_type="texture_view" app:resize_mode="fixed_width" android:visibility="gone"/>
         <TextView
                 android:text="Selftext"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:id="@+id/card_body"/>
+                android:layout_height="wrap_content" android:id="@+id/card_body" android:visibility="gone"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>
