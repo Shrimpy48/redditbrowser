@@ -9,7 +9,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" android:id="@+id/card_items">
         <TextView
-                android:text="Title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:id="@+id/card_title"/>
         <View
@@ -18,16 +17,22 @@
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider"
         />
-        <ImageView
+        <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
-                android:id="@+id/card_image" android:adjustViewBounds="true" android:visibility="gone"/>
-        <com.google.android.exoplayer2.ui.PlayerView
-                android:layout_width="match_parent"
-                android:layout_height="256dp" android:id="@+id/card_video"
-                app:surface_type="texture_view" app:resize_mode="fixed_width" android:visibility="gone"/>
+                android:layout_height="wrap_content" android:id="@+id/card_media" android:visibility="gone"
+                android:clickable="true" android:focusable="true">
+            <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
+                    android:id="@+id/card_image" android:adjustViewBounds="true" android:visibility="gone"/>
+            <com.google.android.exoplayer2.ui.PlayerView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/card_video"
+                    app:surface_type="texture_view" app:resize_mode="fixed_width" android:visibility="gone"
+                    app:use_controller="false"/>
+        </LinearLayout>
         <TextView
-                android:text="Selftext"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/card_body" android:visibility="gone"/>
     </LinearLayout>

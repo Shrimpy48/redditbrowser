@@ -13,3 +13,7 @@ class ProcessedPost(new_title: String, new_type: PostType, new_body: String? = n
 enum class PostType {
     IMAGE, VIDEO, VIDEO_DASH, TEXT, URL
 }
+
+enum class FeedType {
+    MULTI, SUBREDDIT, SPECIAL
+}

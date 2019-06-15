@@ -6,7 +6,7 @@ import retrofit2.http.*
 interface RedditApiService {
     @FormUrlEncoded
     @Headers("User-Agent: ${AuthValues.userAgent}")
-    @POST("/api/v1/access_token")
+    @POST("api/v1/access_token")
     fun getAuth(
         @Header("Authorization") auth: String, @Field("grant_type") grant_type: String, @Field("username") username: String, @Field(
             "password"
@@ -14,18 +14,54 @@ interface RedditApiService {
     ): Single<AuthResponse>
 
     @Headers("User-Agent: ${AuthValues.userAgent}")
-    @GET("/api/v1/me")
+    @GET("api/v1/me")
     fun getMyInfo(@Header("Authorization") token: String): Single<SelfInfo>
 
     @Headers("User-Agent: ${AuthValues.userAgent}")
-    @GET("/subreddits/mine/subscriber")
+    @GET("subreddits/mine/subscriber")
     fun getMySubscribedSubreddits(@Header("Authorization") token: String): Single<SubredditInfoListWrapper>
 
     @Headers("User-Agent: ${AuthValues.userAgent}")
-    @GET("/")
-    fun getMyFrontPage(@Header("Authorization") token: String): Single<PostInfoListWrapper>
+    @GET("subreddits/mine/subscriber")
+    fun getMySubscribedSubreddits(@Header("Authorization") token: String, @Query("after") after: String?, @Query("count") count: Int): Single<SubredditInfoListWrapper>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("api/multi/mine")
+    fun getMyMultis(@Header("Authorization") token: String): Single<List<MultiInfoWrapperBasic>>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("api/multi/mine?expand_srs=true")
+    fun getMyMultisFull(@Header("Authorization") token: String): Single<List<MultiInfoWrapper>>
 
     @Headers("User-Agent: ${AuthValues.userAgent}")
     @GET("/")
-    fun getMyFrontPage(@Header("Authorization") token: String, @Query("after") after: String?, @Query("count") count: Int): Single<PostInfoListWrapper>
+    fun getMyFrontPagePosts(@Header("Authorization") token: String): Single<PostInfoListWrapper>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("/")
+    fun getMyFrontPagePosts(@Header("Authorization") token: String, @Query("after") after: String?, @Query("count") count: Int): Single<PostInfoListWrapper>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("r/{subreddit}")
+    fun getSubredditPosts(@Header("Authorization") token: String, @Path("subreddit") subreddit: String): Single<PostInfoListWrapper>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("r/{subreddit}")
+    fun getSubredditPosts(
+        @Header("Authorization") token: String, @Path("subreddit") subreddit: String, @Query("after") after: String?, @Query(
+            "count"
+        ) count: Int
+    ): Single<PostInfoListWrapper>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("me/m/{multi}")
+    fun getMyMultiPosts(@Header("Authorization") token: String, @Path("multi") multi: String): Single<PostInfoListWrapper>
+
+    @Headers("User-Agent: ${AuthValues.userAgent}")
+    @GET("me/m/{multi}")
+    fun getMyMultiPosts(
+        @Header("Authorization") token: String, @Path("multi") multi: String, @Query("after") after: String?, @Query(
+            "count"
+        ) count: Int
+    ): Single<PostInfoListWrapper>
 }

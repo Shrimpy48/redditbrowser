@@ -40,7 +40,7 @@ class SelfInfo {
     @SerializedName("has_verified_email")
     @Expose
     var hasVerifiedEmail: Any? = null
-    @SerializedName("id")
+    @SerializedName("redditId")
     @Expose
     var id: String? = null
     @SerializedName("is_gold")
@@ -255,7 +255,7 @@ class SubredditInfo {
     var collapseDeletedComments: Boolean? = null
     @SerializedName("emojis_custom_size")
     @Expose
-    var emojisCustomSize: String? = null
+    var emojisCustomSize: Any? = null
     @SerializedName("public_description_html")
     @Expose
     var publicDescriptionHtml: String? = null
@@ -310,7 +310,7 @@ class SubredditInfo {
     @SerializedName("show_media")
     @Expose
     var showMedia: Boolean? = null
-    @SerializedName("id")
+    @SerializedName("redditId")
     @Expose
     var id: String? = null
     @SerializedName("user_is_moderator")
@@ -508,7 +508,7 @@ class PostInfo {
     var postHint: String? = null
     @SerializedName("content_categories")
     @Expose
-    var contentCategories: String? = null
+    var contentCategories: Any? = null
     @SerializedName("is_self")
     @Expose
     var isSelf: Boolean? = null
@@ -608,7 +608,7 @@ class PostInfo {
     @SerializedName("link_flair_background_color")
     @Expose
     var linkFlairBackgroundColor: String? = null
-    @SerializedName("id")
+    @SerializedName("redditId")
     @Expose
     var id: String? = null
     @SerializedName("is_robot_indexable")
@@ -754,7 +754,7 @@ class Preview {
 
     @SerializedName("images")
     @Expose
-    var images: List<Image>? = null
+    var images: List<RedditImage>? = null
     @SerializedName("reddit_video_preview")
     @Expose
     var redditVideoPreview: RedditVideo? = null
@@ -856,7 +856,7 @@ class Richtext {
 
 }
 
-class Image {
+class RedditImage {
 
     @SerializedName("source")
     @Expose
@@ -867,7 +867,7 @@ class Image {
     @SerializedName("variants")
     @Expose
     var variants: Variants? = null
-    @SerializedName("id")
+    @SerializedName("redditId")
     @Expose
     var id: String? = null
 
@@ -947,9 +947,163 @@ class AllAwarding {
     @SerializedName("coin_price")
     @Expose
     var coinPrice: Int? = null
-    @SerializedName("id")
+    @SerializedName("redditId")
     @Expose
     var id: String? = null
+    @SerializedName("name")
+    @Expose
+    var name: String? = null
+
+}
+
+class MultiInfoBasic {
+
+    @SerializedName("can_edit")
+    @Expose
+    var canEdit: Boolean? = null
+    @SerializedName("display_name")
+    @Expose
+    var displayName: String? = null
+    @SerializedName("name")
+    @Expose
+    var name: String? = null
+    @SerializedName("description_html")
+    @Expose
+    var descriptionHtml: String? = null
+    @SerializedName("num_subscribers")
+    @Expose
+    var numSubscribers: Int? = null
+    @SerializedName("copied_from")
+    @Expose
+    var copiedFrom: String? = null
+    @SerializedName("icon_url")
+    @Expose
+    var iconUrl: String? = null
+    @SerializedName("subreddits")
+    @Expose
+    var subreddits: List<SubredditBasic>? = null
+    @SerializedName("created_utc")
+    @Expose
+    var createdUtc: Double? = null
+    @SerializedName("visibility")
+    @Expose
+    var visibility: String? = null
+    @SerializedName("created")
+    @Expose
+    var created: Double? = null
+    @SerializedName("over_18")
+    @Expose
+    var over18: Boolean? = null
+    @SerializedName("path")
+    @Expose
+    var path: String? = null
+    @SerializedName("owner")
+    @Expose
+    var owner: String? = null
+    @SerializedName("key_color")
+    @Expose
+    var keyColor: String? = null
+    @SerializedName("is_subscriber")
+    @Expose
+    var isSubscriber: Boolean? = null
+    @SerializedName("owner_id")
+    @Expose
+    var ownerId: String? = null
+    @SerializedName("description_md")
+    @Expose
+    var descriptionMd: String? = null
+    @SerializedName("is_favorited")
+    @Expose
+    var isFavorited: Boolean? = null
+
+}
+
+class MultiInfoWrapperBasic {
+
+    @SerializedName("kind")
+    @Expose
+    var kind: String? = null
+    @SerializedName("data")
+    @Expose
+    var data: MultiInfoBasic? = null
+
+}
+
+class MultiInfo {
+
+    @SerializedName("can_edit")
+    @Expose
+    var canEdit: Boolean? = null
+    @SerializedName("display_name")
+    @Expose
+    var displayName: String? = null
+    @SerializedName("name")
+    @Expose
+    var name: String? = null
+    @SerializedName("description_html")
+    @Expose
+    var descriptionHtml: String? = null
+    @SerializedName("num_subscribers")
+    @Expose
+    var numSubscribers: Int? = null
+    @SerializedName("copied_from")
+    @Expose
+    var copiedFrom: String? = null
+    @SerializedName("icon_url")
+    @Expose
+    var iconUrl: String? = null
+    @SerializedName("subreddits")
+    @Expose
+    var subreddits: List<SubredditInfoWrapper>? = null
+    @SerializedName("created_utc")
+    @Expose
+    var createdUtc: Double? = null
+    @SerializedName("visibility")
+    @Expose
+    var visibility: String? = null
+    @SerializedName("created")
+    @Expose
+    var created: Double? = null
+    @SerializedName("over_18")
+    @Expose
+    var over18: Boolean? = null
+    @SerializedName("path")
+    @Expose
+    var path: String? = null
+    @SerializedName("owner")
+    @Expose
+    var owner: String? = null
+    @SerializedName("key_color")
+    @Expose
+    var keyColor: String? = null
+    @SerializedName("is_subscriber")
+    @Expose
+    var isSubscriber: Boolean? = null
+    @SerializedName("owner_id")
+    @Expose
+    var ownerId: String? = null
+    @SerializedName("description_md")
+    @Expose
+    var descriptionMd: String? = null
+    @SerializedName("is_favorited")
+    @Expose
+    var isFavorited: Boolean? = null
+
+}
+
+class MultiInfoWrapper {
+
+    @SerializedName("kind")
+    @Expose
+    var kind: String? = null
+    @SerializedName("data")
+    @Expose
+    var data: MultiInfo? = null
+
+}
+
+class SubredditBasic {
+
     @SerializedName("name")
     @Expose
     var name: String? = null
