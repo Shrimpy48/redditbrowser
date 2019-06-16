@@ -13,5 +13,4 @@
     <string name="menu_frontpage">Front page</string>
     <string name="menu_all" translatable="false">all</string>
     <string name="menu_popular" translatable="false">popular</string>
-    <string name="title_activity_main">Browser for Reddit</string>
 </resources>

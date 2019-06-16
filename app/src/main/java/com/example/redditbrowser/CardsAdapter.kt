@@ -23,24 +23,12 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
-import io.reactivex.Single
-import io.reactivex.SingleObserver
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.card.view.*
 
-class CardsAdapter(
-    private val apiServiceOauth: RedditApiService,
-    private val tokenResp: Single<AuthResponse>,
-    private val currentFeed: String,
-    private val currentFeedType: FeedType
-) :
+class CardsAdapter(private val currentFeed: String, private val currentFeedType: FeedType) :
     RecyclerView.Adapter<CardsAdapter.ViewHolder>() {
 
     private val info: ArrayList<ProcessedPost> = ArrayList()
-    private val compositeDisposable: CompositeDisposable = CompositeDisposable()
     private var after: String? = null
     private var dontFetchMore: Boolean = false
 
@@ -182,163 +170,62 @@ class CardsAdapter(
 
     override fun getItemCount(): Int = info.size
 
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        super.onDetachedFromRecyclerView(recyclerView)
-        if (!compositeDisposable.isDisposed) compositeDisposable.dispose()
-        RedditFetcher.dispose()
-    }
-
     private fun fetchMore() {
         dontFetchMore = true
         if (currentFeedType == FeedType.SPECIAL && currentFeed == "Front page")
-            tokenResp.flatMap { firstResponse ->
-                apiServiceOauth.getMyFrontPagePosts(
-                    firstResponse.tokenType + " " + firstResponse.accessToken,
-                    after,
-                    info.size
-                )
-            }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(object : SingleObserver<PostInfoListWrapper> {
-                    override fun onSubscribe(d: Disposable) {
-                        compositeDisposable.add(d)
-                    }
-
-                    override fun onSuccess(resp: PostInfoListWrapper) {
+            RedditFetcher.getMyFrontPagePosts(after, info.size, object : RedditFetcher.Listener<PostPage?> {
+                override fun onComplete(result: PostPage?) {
+                    if (result != null) {
+                        var count = 0
                         val start = info.size
-                        val posts = resp.data?.children
-                        val numPosts = resp.data?.dist
-                        if (posts != null && numPosts != null) {
-                            val batch = Array<ProcessedPost?>(numPosts) { null }
-                            for (i in 0 until numPosts) {
-                                RedditFetcher.parsePost(posts[i].data!!, object : RedditFetcher.ParseListener {
-                                    override fun onSuccess(post: ProcessedPost) {
-                                        batch[i] = post
-                                        if (null !in batch) {
-                                            for (item in batch) info.add(item!!)
-                                            notifyItemRangeInserted(start, numPosts)
-                                        }
-                                    }
-
-                                    override fun onFailure(placeholder: ProcessedPost) {
-                                        batch[i] = placeholder
-                                        if (null !in batch) {
-                                            for (item in batch) info.add(item!!)
-                                            notifyItemRangeInserted(start, numPosts)
-                                        }
-                                    }
-                                })
+                        for (post in result.posts)
+                            if (post != null) {
+                                info.add(post)
+                                count++
                             }
-                        }
-                        after = resp.data?.after
-                        if (after != null) dontFetchMore = false
+                        notifyItemRangeInserted(start, count)
+                        after = result.after
+                        if (after != null)
+                            dontFetchMore = false
                     }
-
-                    override fun onError(e: Throwable) {
-                        Log.e("Feed", e.localizedMessage)
-                    }
-                })
+                }
+            })
         else if (currentFeedType == FeedType.SUBREDDIT)
-            tokenResp.flatMap { firstResponse ->
-                apiServiceOauth.getSubredditPosts(
-                    firstResponse.tokenType + " " + firstResponse.accessToken,
-                    currentFeed,
-                    after,
-                    info.size
-                )
-            }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(object : SingleObserver<PostInfoListWrapper> {
-                    override fun onSubscribe(d: Disposable) {
-                        compositeDisposable.add(d)
-                    }
-
-                    override fun onSuccess(resp: PostInfoListWrapper) {
+            RedditFetcher.getSubredditPosts(currentFeed, after, info.size, object : RedditFetcher.Listener<PostPage?> {
+                override fun onComplete(result: PostPage?) {
+                    if (result != null) {
+                        var count = 0
                         val start = info.size
-                        val posts = resp.data?.children
-                        val numPosts = resp.data?.dist
-                        if (posts != null && numPosts != null) {
-                            val batch = Array<ProcessedPost?>(numPosts) { null }
-                            for (i in 0 until numPosts) {
-                                RedditFetcher.parsePost(posts[i].data!!, object : RedditFetcher.ParseListener {
-                                    override fun onSuccess(post: ProcessedPost) {
-                                        batch[i] = post
-                                        if (null !in batch) {
-                                            for (item in batch) info.add(item!!)
-                                            notifyItemRangeInserted(start, numPosts)
-                                        }
-                                    }
-
-                                    override fun onFailure(placeholder: ProcessedPost) {
-                                        batch[i] = placeholder
-                                        if (null !in batch) {
-                                            for (item in batch) info.add(item!!)
-                                            notifyItemRangeInserted(start, numPosts)
-                                        }
-                                    }
-                                })
+                        for (post in result.posts)
+                            if (post != null) {
+                                info.add(post)
+                                count++
                             }
-                        }
-                        after = resp.data?.after
-                        if (after != null) dontFetchMore = false
+                        notifyItemRangeInserted(start, count)
+                        after = result.after
+                        if (after != null)
+                            dontFetchMore = false
                     }
-
-                    override fun onError(e: Throwable) {
-                        Log.e("Feed", e.localizedMessage)
-                    }
-                })
+                }
+            })
         else if (currentFeedType == FeedType.MULTI)
-            tokenResp.flatMap { firstResponse ->
-                apiServiceOauth.getMyMultiPosts(
-                    firstResponse.tokenType + " " + firstResponse.accessToken,
-                    currentFeed,
-                    after,
-                    info.size
-                )
-            }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(object : SingleObserver<PostInfoListWrapper> {
-                    override fun onSubscribe(d: Disposable) {
-                        compositeDisposable.add(d)
-                    }
-
-                    override fun onSuccess(resp: PostInfoListWrapper) {
+            RedditFetcher.getMyMultiPosts(currentFeed, after, info.size, object : RedditFetcher.Listener<PostPage?> {
+                override fun onComplete(result: PostPage?) {
+                    if (result != null) {
+                        var count = 0
                         val start = info.size
-                        val posts = resp.data?.children
-                        val numPosts = resp.data?.dist
-                        if (posts != null && numPosts != null) {
-                            val batch = Array<ProcessedPost?>(numPosts) { null }
-                            for (i in 0 until numPosts) {
-                                RedditFetcher.parsePost(posts[i].data!!, object : RedditFetcher.ParseListener {
-                                    override fun onSuccess(post: ProcessedPost) {
-                                        batch[i] = post
-                                        if (null !in batch) {
-                                            for (item in batch) info.add(item!!)
-                                            notifyItemRangeInserted(start, numPosts)
-                                        }
-                                    }
-
-                                    override fun onFailure(placeholder: ProcessedPost) {
-                                        batch[i] = placeholder
-                                        if (null !in batch) {
-                                            for (item in batch) info.add(item!!)
-                                            notifyItemRangeInserted(start, numPosts)
-                                        }
-                                    }
-                                })
+                        for (post in result.posts)
+                            if (post != null) {
+                                info.add(post)
+                                count++
                             }
-                        }
-                        after = resp.data?.after
-                        if (after != null) dontFetchMore = false
+                        notifyItemRangeInserted(start, count)
+                        after = result.after
+                        if (after != null)
+                            dontFetchMore = false
                     }
-
-                    override fun onError(e: Throwable) {
-                        Log.e("Feed", e.localizedMessage)
-                    }
-                })
+                }
+            })
         else {
             dontFetchMore = false
             Log.w("Feed", "Unknown feed: $currentFeed (type $currentFeedType)")

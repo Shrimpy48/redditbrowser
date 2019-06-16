@@ -17,3 +17,5 @@ enum class PostType {
 enum class FeedType {
     MULTI, SUBREDDIT, SPECIAL
 }
+
+class PostPage(var posts: List<ProcessedPost?>, var after: String?)

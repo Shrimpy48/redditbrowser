@@ -2,265 +2,337 @@ package com.example.redditbrowser
 
 import android.net.Uri
 import android.util.Log
-import io.reactivex.Single
-import io.reactivex.SingleObserver
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 object RedditFetcher {
-    private val imgurApiService: ImgurApiService
-    private val gfyApiService: GfyApiService
-    private val compositeDisposable: CompositeDisposable = CompositeDisposable()
-    private val gfyTokenResp: Single<GfyAuthResponse>
 
-    init {
-        val imgurRetrofit: Retrofit = Retrofit.Builder()
-            .baseUrl("https://api.imgur.com/3/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-            .build()
-        val gfyRetrofit: Retrofit = Retrofit.Builder()
-            .baseUrl("https://api.gfycat.com/v1/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-            .build()
+    private val redditAuth = ServiceGenerator.getredditAuthService()
+    private val gfyAuth = ServiceGenerator.getGfyAuthService()
 
-        imgurApiService = imgurRetrofit.create(ImgurApiService::class.java)
-        gfyApiService = gfyRetrofit.create(GfyApiService::class.java)
+    private var redditToken: String? = null
+    private var redditExpireTime: Long? = null
 
+    private var gfyToken: String? = null
+    private var gfyExpireTime: Long? = null
+
+
+    private suspend fun getRedditToken(): String? {
+        if (redditToken != null && System.currentTimeMillis() < redditExpireTime!!) {
+            return redditToken
+        }
+        val authResp = redditAuth.getAuth("password", AuthValues.redditUsername, AuthValues.redditPassword)
+        Log.d("Reddit auth", "API ${authResp.code()} ${authResp.message()}")
+        return if (authResp.isSuccessful) {
+            redditToken = authResp.body()?.accessToken
+            redditExpireTime = System.currentTimeMillis() + (authResp.body()?.expiresIn!! * 60 * 1000)
+            redditToken
+        } else {
+            Log.e("Reddit auth", authResp.message())
+            null
+        }
+    }
+
+    private suspend fun getGfyToken(): String? {
+        if (gfyToken != null && System.currentTimeMillis() < gfyExpireTime!!) {
+            return gfyToken
+        }
         val request = GfyAuthRequest()
         request.grantType = "client_credentials"
         request.clientId = AuthValues.gfyId
         request.clientSecret = AuthValues.gfySecret
-
-        gfyTokenResp = gfyApiService.getAuth(request).cache()
+        val authResp = gfyAuth.getAuth(request)
+        Log.d("Gfy auth", "API ${authResp.code()} ${authResp.message()}")
+        return if (authResp.isSuccessful) {
+            gfyToken = authResp.body()?.accessToken
+            gfyExpireTime = System.currentTimeMillis() + (authResp.body()?.expiresIn!! * 60 * 1000)
+            gfyToken
+        } else {
+            Log.e("Gfy auth", authResp.message())
+            null
+        }
     }
 
-    fun parsePost(info: PostInfo, listener: ParseListener) {
+    private suspend fun parseImgurImage(title: String, url: String): ProcessedPost? {
+        val id = url.substringAfterLast("/").substringBeforeLast(".")
+        val res = ServiceGenerator.getImgurService(AuthValues.imgurId)
+            .getImage(id)
+        Log.d("Imgur image", "API ${res.code()} ${res.message()}")
+        if (res.isSuccessful) {
+            val contentUri: Uri
+            val type: PostType
+            when {
+                res.body()?.data?.mp4 != null -> {
+                    contentUri = Uri.parse(res.body()?.data?.mp4)
+                    type = PostType.VIDEO
+                }
+                res.body()?.data?.link != null -> {
+                    contentUri = Uri.parse(res.body()?.data?.link)
+                    type = PostType.IMAGE
+                }
+                else -> {
+                    contentUri = Uri.parse(url)
+                    type = PostType.URL
+                }
+            }
+            return ProcessedPost(title, type, new_content_url = contentUri)
+        }
+        return null
+    }
+
+    private suspend fun parseImgurAlbum(title: String, url: String): ProcessedPost? {
+        val id = url.substringAfterLast("/").substringBeforeLast(".")
+        val res = ServiceGenerator.getImgurService(AuthValues.imgurId)
+            .getAlbumImages(id)
+        Log.d("Imgur album", "API ${res.code()} ${res.message()}")
+        if (res.isSuccessful) {
+            // TODO fully handle albums
+            val contentUri: Uri
+            val type: PostType
+            when {
+                res.body()?.data.isNullOrEmpty() -> return null
+
+                res.body()?.data!![0].mp4 != null -> {
+                    contentUri = Uri.parse(res.body()?.data!![0].mp4)
+                    type = PostType.VIDEO
+                }
+                res.body()?.data!![0].link != null -> {
+                    contentUri = Uri.parse(res.body()?.data!![0].link)
+                    type = PostType.IMAGE
+                }
+                else -> {
+                    contentUri = Uri.parse(url)
+                    type = PostType.URL
+                }
+            }
+            return ProcessedPost(title, type, new_content_url = contentUri)
+        }
+        return null
+    }
+
+    private suspend fun parseGfy(title: String, url: String): ProcessedPost? {
+        val id = url.substringAfterLast("/").substringBefore("-")
+        val token = getGfyToken() ?: return null
+        val contentUri: Uri
+        val type: PostType
+        val res = ServiceGenerator.getGfyService(token)
+            .getGfycat(id)
+        Log.d("Gfy", "API ${res.code()} ${res.message()}")
+        if (res.isSuccessful) {
+            contentUri = Uri.parse(res.body()?.gfyItem?.mp4Url)
+            type = PostType.VIDEO
+        } else {
+            contentUri = Uri.parse(url)
+            type = PostType.URL
+        }
+        return ProcessedPost(title, type, new_content_url = contentUri)
+    }
+
+    private suspend fun parsePost(info: PostInfo): ProcessedPost? {
         val title = info.title
-        var contentUri: Uri? = null
-        var type: PostType? = null
-        var body: String? = null
-        var fetched = false
+        val contentUri: Uri
+        val type: PostType
+        val body: String?
+        val post: ProcessedPost
+        if (title == null) {
+            return null
+        }
         when {
             info.isSelf != null && info.isSelf!! -> {
                 body = info.selftext
                 type = PostType.TEXT
-                fetched = true
+                post = ProcessedPost(title, type, body)
             }
             info.postHint == "image" -> {
                 contentUri = Uri.parse(info.url)
                 type = PostType.IMAGE
-                fetched = true
-                Log.d("Fetcher", "fetched image for ${info.url}")
+                post = ProcessedPost(title, type, new_content_url = contentUri)
             }
             info.secureMedia != null && info.secureMedia?.redditVideo != null -> {
                 contentUri = Uri.parse(info.secureMedia?.redditVideo?.dashUrl)
                 type = PostType.VIDEO_DASH
-                fetched = true
-                Log.d("Fetcher", "fetched dash video for ${info.url}")
+                post = ProcessedPost(title, type, new_content_url = contentUri)
             }
             info.media != null && info.media?.redditVideo != null -> {
                 contentUri = Uri.parse(info.media?.redditVideo?.dashUrl)
                 type = PostType.VIDEO_DASH
-                fetched = true
-                Log.d("Fetcher", "fetched dash video for ${info.url}")
+                post = ProcessedPost(title, type, new_content_url = contentUri)
             }
             info.domain != null && "imgur" in info.domain!! -> {
-                val id = info.url?.substringAfterLast("/")?.substringBeforeLast(".")
-                imgurApiService.getImage(id!!)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(object : SingleObserver<ImgurImageWrapper> {
-                        override fun onSubscribe(d: Disposable) {
-                            compositeDisposable.add(d)
-                        }
-
-                        override fun onSuccess(resp: ImgurImageWrapper) {
-                            when {
-                                resp.data?.mp4 != null -> {
-                                    contentUri = Uri.parse(resp.data?.mp4)
-                                    type = PostType.VIDEO
-                                }
-                                resp.data?.link != null -> {
-                                    contentUri = Uri.parse(resp.data?.link)
-                                    type = PostType.IMAGE
-                                }
-                                else -> {
-                                    val placeholder: ProcessedPost =
-                                        if (title != null) ProcessedPost(
-                                            title,
-                                            PostType.URL,
-                                            new_content_url = Uri.parse(info.url)
-                                        )
-                                        else ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                                    Log.d("Imgur", "could not fetch $id (null link)")
-                                    listener.onFailure(placeholder)
-                                    return
-                                }
-                            }
-                            if (title != null && type != null) {
-                                val post = ProcessedPost(title, type!!, body, contentUri)
-                                Log.d("Imgur", "fetched $id as $type")
-                                listener.onSuccess(post)
-                            } else {
-                                val placeholder = ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                                Log.d("Imgur", "could not fetch $id (invalid title/type)")
-                                listener.onFailure(placeholder)
-                            }
-                        }
-
-                        override fun onError(e: Throwable) {
-                            Log.d("Imgur", "fetch $id as image failed due to ${e.localizedMessage}, trying album")
-                            imgurApiService.getAlbumImages(id)
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(object : SingleObserver<ImgurImageListWrapper> {
-                                    override fun onSubscribe(d: Disposable) {
-                                        compositeDisposable.add(d)
-                                    }
-
-                                    override fun onSuccess(resp: ImgurImageListWrapper) {
-                                        // TODO add full album support
-                                        if (resp.data?.isEmpty()!!) {
-                                            val placeholder: ProcessedPost =
-                                                if (title != null) ProcessedPost(
-                                                    title,
-                                                    PostType.URL,
-                                                    new_content_url = Uri.parse(info.url)
-                                                )
-                                                else ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                                            Log.d("Imgur", "could not fetch $id (no items in album)")
-                                            listener.onFailure(placeholder)
-                                            return
-                                        }
-                                        when {
-                                            resp.data!![0].mp4 != null -> {
-                                                contentUri = Uri.parse(resp.data!![0].mp4)
-                                                type = PostType.VIDEO
-                                            }
-                                            resp.data!![0].link != null -> {
-                                                contentUri = Uri.parse(resp.data!![0].link)
-                                                type = PostType.IMAGE
-                                            }
-                                            else -> {
-                                                val placeholder: ProcessedPost =
-                                                    if (title != null) ProcessedPost(
-                                                        title,
-                                                        PostType.URL,
-                                                        new_content_url = Uri.parse(info.url)
-                                                    )
-                                                    else ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                                                Log.d("Imgur", "could not fetch $id (item 0 has null link)")
-                                                listener.onFailure(placeholder)
-                                                return
-                                            }
-                                        }
-                                        if (title != null && type != null) {
-                                            val post = ProcessedPost(title, type!!, body, contentUri)
-                                            Log.d("Imgur", "fetched first item from $id as $type")
-                                            listener.onSuccess(post)
-                                        } else {
-                                            val placeholder =
-                                                ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                                            Log.d("Imgur", "could not fetch $id (invalid title/type)")
-                                            listener.onFailure(placeholder)
-                                        }
-                                    }
-
-                                    override fun onError(e: Throwable) {
-                                        Log.e("Imgur", e.localizedMessage)
-                                        Log.d("Imgur", "$id could not be fetched")
-                                        val placeholder: ProcessedPost =
-                                            if (title != null) ProcessedPost(
-                                                title,
-                                                PostType.URL,
-                                                new_content_url = Uri.parse(info.url)
-                                            )
-                                            else ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                                        listener.onFailure(placeholder)
-                                    }
-                                })
-                        }
-                    })
+                post = parseImgurImage(title, info.url!!) ?: (parseImgurAlbum(title, info.url!!) ?: return null)
             }
             info.domain != null && "gfycat" in info.domain!! -> {
-                val id = info.url?.substringAfterLast("/")?.substringBefore("-")
-                gfyTokenResp.flatMap { firstResponse ->
-                    gfyApiService.getGfycat(
-                        "Bearer ${firstResponse.accessToken}",
-                        id!!
-                    )
-                }
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(object : SingleObserver<Gfycat> {
-                        override fun onSubscribe(d: Disposable) {
-                            compositeDisposable.add(d)
-                        }
-
-                        override fun onSuccess(resp: Gfycat) {
-                            contentUri = Uri.parse(resp.gfyItem?.mp4Url)
-                            type = PostType.VIDEO
-                            if (title != null && type != null) {
-                                val post = ProcessedPost(title, type!!, body, contentUri)
-                                listener.onSuccess(post)
-                            } else {
-                                val placeholder = ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                                Log.d("Gfy", "could not fetch $id (invalid title/type)")
-                                listener.onFailure(placeholder)
-                            }
-                        }
-
-                        override fun onError(e: Throwable) {
-                            Log.e("Gfycat", e.localizedMessage)
-                            Log.d("Gfycat", "$id could not be fetched")
-                            val placeholder: ProcessedPost =
-                                if (title != null) ProcessedPost(
-                                    title,
-                                    PostType.URL,
-                                    new_content_url = Uri.parse(info.url)
-                                )
-                                else ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post")
-                            listener.onFailure(placeholder)
-                        }
-                    })
+                post = parseGfy(title, info.url!!) ?: return null
             }
             info.preview != null && info.preview?.redditVideoPreview != null -> {
                 contentUri = Uri.parse(info.preview?.redditVideoPreview?.dashUrl)
                 type = PostType.VIDEO_DASH
-                fetched = true
-                Log.d("Fetcher", "using preview for ${info.url}")
+                post = ProcessedPost(title, type, new_content_url = contentUri)
             }
             else -> {
                 contentUri = Uri.parse(info.url)
                 type = PostType.URL
-                fetched = true
-                Log.d("Fetcher", "could not fetch content for ${info.url}")
+                post = ProcessedPost(title, type, new_content_url = contentUri)
             }
         }
-
-        if (fetched && title != null && type != null) {
-            val post = ProcessedPost(title, type!!, body, contentUri)
-            listener.onSuccess(post)
-        } else if (fetched) listener.onFailure(ProcessedPost("ERROR", PostType.TEXT, "Could not fetch post"))
+        return post
     }
 
-    fun dispose() {
-        if (!compositeDisposable.isDisposed) compositeDisposable.dispose()
+    private suspend fun getMyFrontPagePosts(): PostPage? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        val res = reddit.getMyFrontPagePosts()
+        Log.d("Reddit front page", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val posts = res.body()?.data?.children!!
+        val processed = posts.map { info -> parsePost(info.data!!) }
+        return PostPage(processed, res.body()?.data?.after)
     }
 
-    interface ParseListener {
-        fun onSuccess(post: ProcessedPost)
-
-        fun onFailure(placeholder: ProcessedPost)
+    private suspend fun getMyFrontPagePosts(after: String?, count: Int): PostPage? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        val res = reddit.getMyFrontPagePosts(after, count)
+        Log.d("Reddit front page", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val posts = res.body()?.data?.children!!
+        val processed = posts.map { info -> parsePost(info.data!!) }
+        return PostPage(processed, res.body()?.data?.after)
     }
+
+    private suspend fun getMyMultiPosts(name: String): PostPage? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        val res = reddit.getMyMultiPosts(name)
+        Log.d("Reddit multi", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val posts = res.body()?.data?.children!!
+        val processed = posts.map { info -> parsePost(info.data!!) }
+        return PostPage(processed, res.body()?.data?.after)
+    }
+
+    private suspend fun getMyMultiPosts(name: String, after: String?, count: Int): PostPage? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        val res = reddit.getMyMultiPosts(name, after, count)
+        Log.d("Reddit multi", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val posts = res.body()?.data?.children!!
+        val processed = posts.map { info -> parsePost(info.data!!) }
+        return PostPage(processed, res.body()?.data?.after)
+    }
+
+    private suspend fun getSubredditPosts(name: String): PostPage? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        val res = reddit.getSubredditPosts(name)
+        Log.d("Reddit subreddit", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val posts = res.body()?.data?.children!!
+        val processed = posts.map { info -> parsePost(info.data!!) }
+        return PostPage(processed, res.body()?.data?.after)
+    }
+
+    private suspend fun getSubredditPosts(name: String, after: String?, count: Int): PostPage? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        val res = reddit.getSubredditPosts(name, after, count)
+        Log.d("Reddit subreddit", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val posts = res.body()?.data?.children!!
+        val processed = posts.map { info -> parsePost(info.data!!) }
+        return PostPage(processed, res.body()?.data?.after)
+    }
+
+    private suspend fun getMyMultis(): List<String?>? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        val res = reddit.getMyMultis()
+        Log.d("Reddit my multis", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val multis = res.body()!!
+        return multis.map { info -> info.data?.displayName }
+    }
+
+    private suspend fun getMySubscribedSubreddits(): List<String?>? {
+        val token = getRedditToken() ?: return null
+        val reddit = ServiceGenerator.getredditService(token)
+        var res = reddit.getMySubscribedSubreddits()
+        Log.d("Reddit my subreddits", "API ${res.code()} ${res.message()}")
+        if (!res.isSuccessful) return null
+        val names = ArrayList<String?>()
+        var subreddits = res.body()?.data?.children!!
+        for (subreddit in subreddits) {
+            names.add(subreddit.data?.displayName)
+        }
+        var after = res.body()?.data?.after
+        var count = res.body()?.data?.dist!!
+        while (after != null) {
+            res = reddit.getMySubscribedSubreddits(after, count)
+            if (!res.isSuccessful) return null
+            subreddits = res.body()?.data?.children!!
+            for (subreddit in subreddits) {
+                names.add(subreddit.data?.displayName)
+            }
+            after = res.body()?.data?.after
+            count += res.body()?.data?.dist!!
+        }
+        return names
+    }
+
+
+    fun getMyFrontPagePosts(listener: Listener<PostPage?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getMyFrontPagePosts())
+        }
+    }
+
+    fun getMyFrontPagePosts(after: String?, count: Int, listener: Listener<PostPage?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getMyFrontPagePosts(after, count))
+        }
+    }
+
+    fun getMyMultiPosts(name: String, listener: Listener<PostPage?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getMyMultiPosts(name))
+        }
+    }
+
+    fun getMyMultiPosts(name: String, after: String?, count: Int, listener: Listener<PostPage?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getMyMultiPosts(name, after, count))
+        }
+    }
+
+    fun getSubredditPosts(name: String, listener: Listener<PostPage?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getSubredditPosts(name))
+        }
+    }
+
+    fun getSubredditPosts(name: String, after: String?, count: Int, listener: Listener<PostPage?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getSubredditPosts(name, after, count))
+        }
+    }
+
+    fun getMyMultis(listener: Listener<List<String?>?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getMyMultis())
+        }
+    }
+
+    fun getMySubscribedSubreddits(listener: Listener<List<String?>?>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            listener.onComplete(getMySubscribedSubreddits())
+        }
+    }
+
+    interface Listener<T> {
+        fun onComplete(result: T)
+    }
+
 }
-
-
