@@ -10,7 +10,6 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.google.android.exoplayer2.DefaultLoadControl
 import com.google.android.exoplayer2.DefaultRenderersFactory
 import com.google.android.exoplayer2.ExoPlayerFactory
@@ -63,8 +62,9 @@ class CardsAdapter(private val currentFeed: String, private val currentFeedType:
             PostType.IMAGE -> {
                 holder.cardView.card_image.visibility = VISIBLE
                 holder.cardView.card_media.visibility = VISIBLE
-                Glide.with(holder.cardView.card_image.context)
+                GlideApp.with(holder.cardView.card_image.context)
                     .load(info[position].contentUrl)
+                    .thumbnail(0.1f)
                     .into(holder.cardView.card_image)
 
                 holder.cardView.card_media.setOnClickListener {
@@ -163,7 +163,7 @@ class CardsAdapter(private val currentFeed: String, private val currentFeedType:
         holder.cardView.card_video.visibility = GONE
         holder.cardView.card_body.visibility = GONE
         holder.cardView.card_media.visibility = GONE
-        Glide.with(holder.cardView.card_image.context)
+        GlideApp.with(holder.cardView.card_image.context)
             .clear(holder.cardView.card_image)
         holder.player.release()
     }

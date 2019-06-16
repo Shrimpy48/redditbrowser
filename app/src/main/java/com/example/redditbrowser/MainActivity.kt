@@ -1,5 +1,6 @@
 package com.example.redditbrowser
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Menu
 import android.view.Menu.NONE
@@ -43,7 +44,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         ServiceGenerator.setCache(cacheDir)
 
-        viewManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        val spanCount: Int = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 2
+        else 1
+
+        viewManager = StaggeredGridLayoutManager(spanCount, StaggeredGridLayoutManager.VERTICAL)
         viewAdapter = CardsAdapter(currentFeed, currentFeedType)
         recyclerView = findViewById<RecyclerView>(R.id.cards_recycler_view).apply {
             setHasFixedSize(true)

@@ -5,6 +5,8 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 
 object RedditFetcher {
@@ -18,48 +20,59 @@ object RedditFetcher {
     private var gfyToken: String? = null
     private var gfyExpireTime: Long? = null
 
+    private val redditMutex = Mutex()
+    private val gfyMutex = Mutex()
+
+    private val redditServiceMutex = Mutex()
+    private val imgurServiceMutex = Mutex()
+    private val gfyServiceMutex = Mutex()
+
 
     private suspend fun getRedditToken(): String? {
-        if (redditToken != null && System.currentTimeMillis() < redditExpireTime!!) {
-            return redditToken
-        }
-        val authResp = redditAuth.getAuth("password", AuthValues.redditUsername, AuthValues.redditPassword)
-        Log.d("Reddit auth", "API ${authResp.code()} ${authResp.message()}")
-        return if (authResp.isSuccessful) {
-            redditToken = authResp.body()?.accessToken
-            redditExpireTime = System.currentTimeMillis() + (authResp.body()?.expiresIn!! * 60 * 1000)
-            redditToken
-        } else {
-            Log.e("Reddit auth", authResp.message())
-            null
+        redditMutex.withLock {
+            if (redditToken != null && System.currentTimeMillis() < redditExpireTime!!) {
+                return redditToken
+            }
+            val authResp = redditAuth.getAuth("password", AuthValues.redditUsername, AuthValues.redditPassword)
+            return if (authResp.isSuccessful) {
+                redditToken = authResp.body()?.accessToken!!
+                redditExpireTime = System.currentTimeMillis() + (authResp.body()?.expiresIn!! * 1000)
+                redditToken
+            } else {
+                Log.e("Reddit auth", authResp.message())
+                null
+            }
         }
     }
 
     private suspend fun getGfyToken(): String? {
-        if (gfyToken != null && System.currentTimeMillis() < gfyExpireTime!!) {
-            return gfyToken
-        }
-        val request = GfyAuthRequest()
-        request.grantType = "client_credentials"
-        request.clientId = AuthValues.gfyId
-        request.clientSecret = AuthValues.gfySecret
-        val authResp = gfyAuth.getAuth(request)
-        Log.d("Gfy auth", "API ${authResp.code()} ${authResp.message()}")
-        return if (authResp.isSuccessful) {
-            gfyToken = authResp.body()?.accessToken
-            gfyExpireTime = System.currentTimeMillis() + (authResp.body()?.expiresIn!! * 60 * 1000)
-            gfyToken
-        } else {
-            Log.e("Gfy auth", authResp.message())
-            null
+        gfyMutex.withLock {
+            if (gfyToken != null && System.currentTimeMillis() < gfyExpireTime!!) {
+                return gfyToken
+            }
+            val request = GfyAuthRequest()
+            request.grantType = "client_credentials"
+            request.clientId = AuthValues.gfyId
+            request.clientSecret = AuthValues.gfySecret
+            val authResp = gfyAuth.getAuth(request)
+            return if (authResp.isSuccessful) {
+                gfyToken = authResp.body()?.accessToken
+                gfyExpireTime = System.currentTimeMillis() + (authResp.body()?.expiresIn!! * 1000)
+                gfyToken
+            } else {
+                Log.e("Gfy auth", authResp.message())
+                null
+            }
         }
     }
 
     private suspend fun parseImgurImage(title: String, url: String): ProcessedPost? {
         val id = url.substringAfterLast("/").substringBeforeLast(".")
-        val res = ServiceGenerator.getImgurService(AuthValues.imgurId)
-            .getImage(id)
-        Log.d("Imgur image", "API ${res.code()} ${res.message()}")
+        var service: ImgurApiService? = null
+        imgurServiceMutex.withLock {
+            service = ServiceGenerator.getImgurService()
+        }
+        val res = service!!.getImage(id)
         if (res.isSuccessful) {
             val contentUri: Uri
             val type: PostType
@@ -79,14 +92,19 @@ object RedditFetcher {
             }
             return ProcessedPost(title, type, new_content_url = contentUri)
         }
-        return null
+        Log.d("Imgur image", "ID $id not successfully fetched")
+        val contentUri = Uri.parse(url)
+        val type = PostType.URL
+        return ProcessedPost(title, type, new_content_url = contentUri)
     }
 
     private suspend fun parseImgurAlbum(title: String, url: String): ProcessedPost? {
         val id = url.substringAfterLast("/").substringBeforeLast(".")
-        val res = ServiceGenerator.getImgurService(AuthValues.imgurId)
-            .getAlbumImages(id)
-        Log.d("Imgur album", "API ${res.code()} ${res.message()}")
+        var service: ImgurApiService? = null
+        imgurServiceMutex.withLock {
+            service = ServiceGenerator.getImgurService()
+        }
+        val res = service!!.getAlbumImages(id)
         if (res.isSuccessful) {
             // TODO fully handle albums
             val contentUri: Uri
@@ -109,23 +127,29 @@ object RedditFetcher {
             }
             return ProcessedPost(title, type, new_content_url = contentUri)
         }
-        return null
+        Log.d("Imgur album", "ID $id not successfully fetched")
+        val contentUri = Uri.parse(url)
+        val type = PostType.URL
+        return ProcessedPost(title, type, new_content_url = contentUri)
     }
 
     private suspend fun parseGfy(title: String, url: String): ProcessedPost? {
-        val id = url.substringAfterLast("/").substringBefore("-")
+        val id = url.substringAfterLast("/").substringBeforeLast(".").substringBefore("-")
         val token = getGfyToken() ?: return null
         val contentUri: Uri
         val type: PostType
-        val res = ServiceGenerator.getGfyService(token)
-            .getGfycat(id)
-        Log.d("Gfy", "API ${res.code()} ${res.message()}")
+        var service: GfyApiService? = null
+        gfyServiceMutex.withLock {
+            service = ServiceGenerator.getGfyService(token)
+        }
+        val res = service!!.getGfycat(id)
         if (res.isSuccessful) {
             contentUri = Uri.parse(res.body()?.gfyItem?.mp4Url)
             type = PostType.VIDEO
         } else {
             contentUri = Uri.parse(url)
             type = PostType.URL
+            Log.d("Gfy", "ID $id not successfully fetched")
         }
         return ProcessedPost(title, type, new_content_url = contentUri)
     }
@@ -182,9 +206,11 @@ object RedditFetcher {
 
     private suspend fun getMyFrontPagePosts(): PostPage? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        val res = reddit.getMyFrontPagePosts()
-        Log.d("Reddit front page", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        val res = reddit!!.getMyFrontPagePosts()
         if (!res.isSuccessful) return null
         val posts = res.body()?.data?.children!!
         val processed = posts.map { info -> parsePost(info.data!!) }
@@ -193,9 +219,11 @@ object RedditFetcher {
 
     private suspend fun getMyFrontPagePosts(after: String?, count: Int): PostPage? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        val res = reddit.getMyFrontPagePosts(after, count)
-        Log.d("Reddit front page", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        val res = reddit!!.getMyFrontPagePosts(after, count)
         if (!res.isSuccessful) return null
         val posts = res.body()?.data?.children!!
         val processed = posts.map { info -> parsePost(info.data!!) }
@@ -204,9 +232,11 @@ object RedditFetcher {
 
     private suspend fun getMyMultiPosts(name: String): PostPage? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        val res = reddit.getMyMultiPosts(name)
-        Log.d("Reddit multi", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        val res = reddit!!.getMyMultiPosts(name)
         if (!res.isSuccessful) return null
         val posts = res.body()?.data?.children!!
         val processed = posts.map { info -> parsePost(info.data!!) }
@@ -215,9 +245,11 @@ object RedditFetcher {
 
     private suspend fun getMyMultiPosts(name: String, after: String?, count: Int): PostPage? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        val res = reddit.getMyMultiPosts(name, after, count)
-        Log.d("Reddit multi", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        val res = reddit!!.getMyMultiPosts(name, after, count)
         if (!res.isSuccessful) return null
         val posts = res.body()?.data?.children!!
         val processed = posts.map { info -> parsePost(info.data!!) }
@@ -226,9 +258,11 @@ object RedditFetcher {
 
     private suspend fun getSubredditPosts(name: String): PostPage? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        val res = reddit.getSubredditPosts(name)
-        Log.d("Reddit subreddit", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        val res = reddit!!.getSubredditPosts(name)
         if (!res.isSuccessful) return null
         val posts = res.body()?.data?.children!!
         val processed = posts.map { info -> parsePost(info.data!!) }
@@ -237,9 +271,11 @@ object RedditFetcher {
 
     private suspend fun getSubredditPosts(name: String, after: String?, count: Int): PostPage? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        val res = reddit.getSubredditPosts(name, after, count)
-        Log.d("Reddit subreddit", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        val res = reddit!!.getSubredditPosts(name, after, count)
         if (!res.isSuccessful) return null
         val posts = res.body()?.data?.children!!
         val processed = posts.map { info -> parsePost(info.data!!) }
@@ -248,9 +284,11 @@ object RedditFetcher {
 
     private suspend fun getMyMultis(): List<String?>? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        val res = reddit.getMyMultis()
-        Log.d("Reddit my multis", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        val res = reddit!!.getMyMultis()
         if (!res.isSuccessful) return null
         val multis = res.body()!!
         return multis.map { info -> info.data?.displayName }
@@ -258,9 +296,11 @@ object RedditFetcher {
 
     private suspend fun getMySubscribedSubreddits(): List<String?>? {
         val token = getRedditToken() ?: return null
-        val reddit = ServiceGenerator.getredditService(token)
-        var res = reddit.getMySubscribedSubreddits()
-        Log.d("Reddit my subreddits", "API ${res.code()} ${res.message()}")
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getredditService(token)
+        }
+        var res = reddit!!.getMySubscribedSubreddits()
         if (!res.isSuccessful) return null
         val names = ArrayList<String?>()
         var subreddits = res.body()?.data?.children!!
@@ -270,7 +310,7 @@ object RedditFetcher {
         var after = res.body()?.data?.after
         var count = res.body()?.data?.dist!!
         while (after != null) {
-            res = reddit.getMySubscribedSubreddits(after, count)
+            res = reddit!!.getMySubscribedSubreddits(after, count)
             if (!res.isSuccessful) return null
             subreddits = res.body()?.data?.children!!
             for (subreddit in subreddits) {

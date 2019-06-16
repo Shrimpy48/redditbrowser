@@ -1,8 +1,10 @@
 package com.example.redditbrowser
 
+import android.util.Log
 import okhttp3.Cache
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
@@ -72,6 +74,20 @@ object ServiceGenerator {
         Credentials.basic(AuthValues.redditId, AuthValues.redditSecret)
     )
 
+    private val imgurAuthInterceptor = AuthenticationInterceptor("Client-ID ${AuthValues.imgurId}")
+
+    private val loggingInterceptor = HttpLoggingInterceptor()
+
+    init {
+        loggingInterceptor.level = HttpLoggingInterceptor.Level.BASIC
+    }
+
+    private var redditToken: String = ""
+    private lateinit var redditTokenAuthInterceptor: AuthenticationInterceptor
+
+    private var gfyToken: String = ""
+    private lateinit var gfyTokenAuthInterceptor: AuthenticationInterceptor
+
 
     fun setCache(cacheDir: File) {
         val cache = Cache(cacheDir, cacheSize)
@@ -93,7 +109,13 @@ object ServiceGenerator {
             needsBuilding = true
         }
 
+        if (!redditAuthClientBuilder.interceptors().contains(loggingInterceptor)) {
+            redditAuthClientBuilder.addInterceptor(loggingInterceptor)
+            needsBuilding = true
+        }
+
         if (needsBuilding) {
+            Log.d("RedditAuthService", "Rebuilt")
             redditAuthClient = redditAuthClientBuilder.build()
             redditAuthBuilder = redditAuthBuilder.client(redditAuthClient)
             redditAuth = redditAuthBuilder.build()
@@ -110,14 +132,23 @@ object ServiceGenerator {
             needsBuilding = true
         }
 
-        val oauthInterceptor = AuthenticationInterceptor("Bearer $token")
+        if (redditToken != token) {
+            redditTokenAuthInterceptor = AuthenticationInterceptor("Bearer $token")
+            redditToken = token
+        }
 
-        if (!redditClientBuilder.interceptors().contains(oauthInterceptor)) {
-            redditClientBuilder.addInterceptor(oauthInterceptor)
+        if (!redditClientBuilder.interceptors().contains(redditTokenAuthInterceptor)) {
+            redditClientBuilder.addInterceptor(redditTokenAuthInterceptor)
+            needsBuilding = true
+        }
+
+        if (!redditClientBuilder.interceptors().contains(loggingInterceptor)) {
+            redditClientBuilder.addInterceptor(loggingInterceptor)
             needsBuilding = true
         }
 
         if (needsBuilding) {
+            Log.d("RedditService", "Rebuilt")
             redditClient = redditClientBuilder.build()
             redditBuilder = redditBuilder.client(redditClient)
             reddit = redditBuilder.build()
@@ -127,17 +158,21 @@ object ServiceGenerator {
         return redditService
     }
 
-    fun getImgurService(clientId: String): ImgurApiService {
+    fun getImgurService(): ImgurApiService {
         var needsBuilding = false
 
-        val authInterceptor = AuthenticationInterceptor("Client-ID $clientId")
+        if (!imgurClientBuilder.interceptors().contains(imgurAuthInterceptor)) {
+            imgurClientBuilder.addInterceptor(imgurAuthInterceptor)
+            needsBuilding = true
+        }
 
-        if (!imgurClientBuilder.interceptors().contains(authInterceptor)) {
-            imgurClientBuilder.addInterceptor(authInterceptor)
+        if (!imgurClientBuilder.interceptors().contains(loggingInterceptor)) {
+            imgurClientBuilder.addInterceptor(loggingInterceptor)
             needsBuilding = true
         }
 
         if (needsBuilding) {
+            Log.d("ImgurService", "Rebuilt")
             imgurClient = imgurClientBuilder.build()
             imgurBuilder = imgurBuilder.client(imgurClient)
             imgur = imgurBuilder.build()
@@ -147,19 +182,45 @@ object ServiceGenerator {
         return imgurService
     }
 
-    fun getGfyAuthService(): GfyAuthApiService = gfyAuthService
-
-    fun getGfyService(token: String): GfyApiService {
+    fun getGfyAuthService(): GfyAuthApiService {
         var needsBuilding = false
 
-        val oauthInterceptor = AuthenticationInterceptor("Bearer $token")
-
-        if (!gfyClientBuilder.interceptors().contains(oauthInterceptor)) {
-            gfyClientBuilder.addInterceptor(oauthInterceptor)
+        if (!gfyAuthClientBuilder.interceptors().contains(loggingInterceptor)) {
+            gfyAuthClientBuilder.addInterceptor(loggingInterceptor)
             needsBuilding = true
         }
 
         if (needsBuilding) {
+            Log.d("GfyAuthService", "Rebuilt")
+            gfyAuthClient = gfyAuthClientBuilder.build()
+            gfyAuthBuilder = gfyAuthBuilder.client(gfyAuthClient)
+            gfyAuth = gfyAuthBuilder.build()
+            gfyAuthService = gfyAuth.create(GfyAuthApiService::class.java)
+        }
+
+        return gfyAuthService
+    }
+
+    fun getGfyService(token: String): GfyApiService {
+        var needsBuilding = false
+
+        if (gfyToken != token) {
+            gfyTokenAuthInterceptor = AuthenticationInterceptor("Bearer $token")
+            gfyToken = token
+        }
+
+        if (!gfyClientBuilder.interceptors().contains(gfyTokenAuthInterceptor)) {
+            gfyClientBuilder.addInterceptor(gfyTokenAuthInterceptor)
+            needsBuilding = true
+        }
+
+        if (!gfyClientBuilder.interceptors().contains(loggingInterceptor)) {
+            gfyClientBuilder.addInterceptor(loggingInterceptor)
+            needsBuilding = true
+        }
+
+        if (needsBuilding) {
+            Log.d("GfyService", "Rebuilt")
             gfyClient = gfyClientBuilder.build()
             gfyBuilder = gfyBuilder.client(gfyClient)
             gfy = gfyBuilder.build()

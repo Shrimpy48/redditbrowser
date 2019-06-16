@@ -8,7 +8,6 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
 import com.google.android.exoplayer2.DefaultLoadControl
 import com.google.android.exoplayer2.DefaultRenderersFactory
 import com.google.android.exoplayer2.ExoPlayerFactory
@@ -54,7 +53,7 @@ class FullscreenPostActivity : AppCompatActivity() {
         when (type) {
             PostType.IMAGE -> {
                 image.visibility = VISIBLE
-                Glide.with(this)
+                GlideApp.with(this)
                     .load(url)
                     .into(image)
             }
@@ -94,7 +93,7 @@ class FullscreenPostActivity : AppCompatActivity() {
         super.onStop()
         image.visibility = GONE
         video.visibility = GONE
-        Glide.with(this)
+        GlideApp.with(this)
             .clear(image)
         player.release()
     }
