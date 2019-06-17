@@ -1,13 +1,9 @@
 package com.example.redditbrowser
 
 import android.util.Log
-import okhttp3.Cache
 import okhttp3.Credentials
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.io.File
 
 
 object ServiceGenerator {
@@ -17,19 +13,11 @@ object ServiceGenerator {
     private const val IMGUR_BASE_URL = "https://api.imgur.com/3/"
     private const val GFY_BASE_URL = "https://api.gfycat.com/v1/"
 
-    private const val cacheSize: Long = 10 * 1024 * 1024
-
-    private var redditAuthClientBuilder = OkHttpClient.Builder()
-    private var redditClientBuilder = OkHttpClient.Builder()
-    private var imgurClientBuilder = OkHttpClient.Builder()
-    private var gfyAuthClientBuilder = OkHttpClient.Builder()
-    private var gfyClientBuilder = OkHttpClient.Builder()
-
-    private var redditAuthClient = redditAuthClientBuilder.build()
-    private var redditClient = redditClientBuilder.build()
-    private var imgurClient = imgurClientBuilder.build()
-    private var gfyAuthClient = gfyClientBuilder.build()
-    private var gfyClient = gfyClientBuilder.build()
+    private var redditAuthClient = HttpClientBuilder.getClient()
+    private var redditClient = HttpClientBuilder.getClient()
+    private var imgurClient = HttpClientBuilder.getClient()
+    private var gfyAuthClient = HttpClientBuilder.getClient()
+    private var gfyClient = HttpClientBuilder.getClient()
 
     private var redditAuthBuilder = Retrofit.Builder()
         .baseUrl(REDDIT_BASE_URL)
@@ -76,12 +64,6 @@ object ServiceGenerator {
 
     private val imgurAuthInterceptor = AuthenticationInterceptor("Client-ID ${AuthValues.imgurId}")
 
-    private val loggingInterceptor = HttpLoggingInterceptor()
-
-    init {
-        loggingInterceptor.level = HttpLoggingInterceptor.Level.BASIC
-    }
-
     private var redditToken: String = ""
     private lateinit var redditTokenAuthInterceptor: AuthenticationInterceptor
 
@@ -89,34 +71,21 @@ object ServiceGenerator {
     private lateinit var gfyTokenAuthInterceptor: AuthenticationInterceptor
 
 
-    fun setCache(cacheDir: File) {
-        val cache = Cache(cacheDir, cacheSize)
-        redditAuthClientBuilder = redditAuthClientBuilder.cache(cache)
-        redditClientBuilder = redditClientBuilder.cache(cache)
-        imgurClientBuilder = imgurClientBuilder.cache(cache)
-        gfyAuthClientBuilder = gfyAuthClientBuilder.cache(cache)
-        gfyClientBuilder = gfyClientBuilder.cache(cache)
-    }
-
-    fun getredditAuthService(): RedditAuthApiService {
+    fun getRedditAuthService(): RedditAuthApiService {
         var needsBuilding = false
-        if (!redditAuthClientBuilder.interceptors().contains(redditAgentInterceptor)) {
-            redditAuthClientBuilder.addInterceptor(redditAgentInterceptor)
+        if (!redditAuthClient.interceptors().contains(redditAgentInterceptor)) {
             needsBuilding = true
         }
-        if (!redditAuthClientBuilder.interceptors().contains(redditAuthInterceptor)) {
-            redditAuthClientBuilder.addInterceptor(redditAuthInterceptor)
-            needsBuilding = true
-        }
-
-        if (!redditAuthClientBuilder.interceptors().contains(loggingInterceptor)) {
-            redditAuthClientBuilder.addInterceptor(loggingInterceptor)
+        if (!redditAuthClient.interceptors().contains(redditAuthInterceptor)) {
             needsBuilding = true
         }
 
         if (needsBuilding) {
             Log.d("RedditAuthService", "Rebuilt")
-            redditAuthClient = redditAuthClientBuilder.build()
+            redditAuthClient = HttpClientBuilder.getNewBuilder()
+                .addInterceptor(redditAgentInterceptor)
+                .addInterceptor(redditAuthInterceptor)
+                .build()
             redditAuthBuilder = redditAuthBuilder.client(redditAuthClient)
             redditAuth = redditAuthBuilder.build()
             redditAuthService = redditAuth.create(RedditAuthApiService::class.java)
@@ -125,10 +94,9 @@ object ServiceGenerator {
         return redditAuthService
     }
 
-    fun getredditService(token: String): RedditApiService {
+    fun getRedditService(token: String): RedditApiService {
         var needsBuilding = false
-        if (!redditClientBuilder.interceptors().contains(redditAgentInterceptor)) {
-            redditClientBuilder.addInterceptor(redditAgentInterceptor)
+        if (!redditClient.interceptors().contains(redditAgentInterceptor)) {
             needsBuilding = true
         }
 
@@ -137,19 +105,16 @@ object ServiceGenerator {
             redditToken = token
         }
 
-        if (!redditClientBuilder.interceptors().contains(redditTokenAuthInterceptor)) {
-            redditClientBuilder.addInterceptor(redditTokenAuthInterceptor)
-            needsBuilding = true
-        }
-
-        if (!redditClientBuilder.interceptors().contains(loggingInterceptor)) {
-            redditClientBuilder.addInterceptor(loggingInterceptor)
+        if (!redditClient.interceptors().contains(redditTokenAuthInterceptor)) {
             needsBuilding = true
         }
 
         if (needsBuilding) {
             Log.d("RedditService", "Rebuilt")
-            redditClient = redditClientBuilder.build()
+            redditClient = HttpClientBuilder.getNewBuilder()
+                .addInterceptor(redditAgentInterceptor)
+                .addInterceptor(redditTokenAuthInterceptor)
+                .build()
             redditBuilder = redditBuilder.client(redditClient)
             reddit = redditBuilder.build()
             redditService = reddit.create(RedditApiService::class.java)
@@ -161,19 +126,15 @@ object ServiceGenerator {
     fun getImgurService(): ImgurApiService {
         var needsBuilding = false
 
-        if (!imgurClientBuilder.interceptors().contains(imgurAuthInterceptor)) {
-            imgurClientBuilder.addInterceptor(imgurAuthInterceptor)
-            needsBuilding = true
-        }
-
-        if (!imgurClientBuilder.interceptors().contains(loggingInterceptor)) {
-            imgurClientBuilder.addInterceptor(loggingInterceptor)
+        if (!imgurClient.interceptors().contains(imgurAuthInterceptor)) {
             needsBuilding = true
         }
 
         if (needsBuilding) {
             Log.d("ImgurService", "Rebuilt")
-            imgurClient = imgurClientBuilder.build()
+            imgurClient = HttpClientBuilder.getNewBuilder()
+                .addInterceptor(imgurAuthInterceptor)
+                .build()
             imgurBuilder = imgurBuilder.client(imgurClient)
             imgur = imgurBuilder.build()
             imgurService = imgur.create(ImgurApiService::class.java)
@@ -183,20 +144,6 @@ object ServiceGenerator {
     }
 
     fun getGfyAuthService(): GfyAuthApiService {
-        var needsBuilding = false
-
-        if (!gfyAuthClientBuilder.interceptors().contains(loggingInterceptor)) {
-            gfyAuthClientBuilder.addInterceptor(loggingInterceptor)
-            needsBuilding = true
-        }
-
-        if (needsBuilding) {
-            Log.d("GfyAuthService", "Rebuilt")
-            gfyAuthClient = gfyAuthClientBuilder.build()
-            gfyAuthBuilder = gfyAuthBuilder.client(gfyAuthClient)
-            gfyAuth = gfyAuthBuilder.build()
-            gfyAuthService = gfyAuth.create(GfyAuthApiService::class.java)
-        }
 
         return gfyAuthService
     }
@@ -209,19 +156,15 @@ object ServiceGenerator {
             gfyToken = token
         }
 
-        if (!gfyClientBuilder.interceptors().contains(gfyTokenAuthInterceptor)) {
-            gfyClientBuilder.addInterceptor(gfyTokenAuthInterceptor)
-            needsBuilding = true
-        }
-
-        if (!gfyClientBuilder.interceptors().contains(loggingInterceptor)) {
-            gfyClientBuilder.addInterceptor(loggingInterceptor)
+        if (!gfyClient.interceptors().contains(gfyTokenAuthInterceptor)) {
             needsBuilding = true
         }
 
         if (needsBuilding) {
             Log.d("GfyService", "Rebuilt")
-            gfyClient = gfyClientBuilder.build()
+            gfyClient = HttpClientBuilder.getNewBuilder()
+                .addInterceptor(gfyTokenAuthInterceptor)
+                .build()
             gfyBuilder = gfyBuilder.client(gfyClient)
             gfy = gfyBuilder.build()
             gfyService = gfy.create(GfyApiService::class.java)

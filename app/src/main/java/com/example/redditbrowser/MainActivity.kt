@@ -1,7 +1,9 @@
 package com.example.redditbrowser
 
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.Menu
 import android.view.Menu.NONE
 import android.view.MenuItem
@@ -14,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_main.*
+import okhttp3.Cache
 
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -25,6 +28,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -39,16 +43,33 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         navView.setNavigationItemSelectedListener(this)
 
-        currentFeed = "Front page"
-        currentFeedType = FeedType.SPECIAL
+        if (savedInstanceState != null) {
+            currentFeed = if (savedInstanceState.containsKey("currentFeed"))
+                savedInstanceState.getString("currentFeed")!!
+            else "Front page"
+            currentFeedType = if (savedInstanceState.containsKey("currentFeedType"))
+                savedInstanceState.getSerializable("currentFeedType") as FeedType
+            else FeedType.SPECIAL
+        } else {
+            currentFeed = "Front page"
+            currentFeedType = FeedType.SPECIAL
+        }
 
-        ServiceGenerator.setCache(cacheDir)
+        val cacheSize: Long = 250 * 1024 * 1024
 
-        val spanCount: Int = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 2
-        else 1
+        HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
+
+        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+        val spanCountLandscape = prefs.getInt("cols_landscape", 2)
+        val spanCountPortrait = prefs.getInt("cols_portrait", 1)
+
+        val spanCount: Int =
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) spanCountLandscape
+            else spanCountPortrait
 
         viewManager = StaggeredGridLayoutManager(spanCount, StaggeredGridLayoutManager.VERTICAL)
-        viewAdapter = CardsAdapter(currentFeed, currentFeedType)
+        viewAdapter = CardsAdapter(this, currentFeed, currentFeedType)
         recyclerView = findViewById<RecyclerView>(R.id.cards_recycler_view).apply {
             setHasFixedSize(true)
             layoutManager = viewManager
@@ -71,6 +92,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         } else {
             super.onBackPressed()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
+        super.onSaveInstanceState(outState, outPersistentState)
+        outState?.putString("currentFeed", currentFeed)
+        outState?.putSerializable("currentFeedType", currentFeedType)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -112,7 +139,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun fetchSubreddits(menu: Menu) {
-        RedditFetcher.getMySubscribedSubreddits(object : RedditFetcher.Listener<List<String?>?> {
+        ApiFetcher.getMySubscribedSubreddits(object : ApiFetcher.Listener<List<String?>?> {
             override fun onComplete(result: List<String?>?) {
                 if (result != null)
                     for (subreddit in result)
@@ -123,7 +150,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun fetchMultis(menu: Menu) {
-        RedditFetcher.getMyMultis(object : RedditFetcher.Listener<List<String?>?> {
+        ApiFetcher.getMyMultis(object : ApiFetcher.Listener<List<String?>?> {
             override fun onComplete(result: List<String?>?) {
                 if (result != null)
                     for (multi in result)
@@ -137,7 +164,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (currentFeed != newFeed || currentFeedType != newType) {
             currentFeed = newFeed
             currentFeedType = newType
-            viewAdapter = CardsAdapter(currentFeed, currentFeedType)
+            viewAdapter = CardsAdapter(this, currentFeed, currentFeedType)
             recyclerView.swapAdapter(viewAdapter, false)
         }
     }

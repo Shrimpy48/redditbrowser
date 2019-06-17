@@ -19,6 +19,16 @@ interface RedditApiService {
         @Query("count") count: Int
     ): Response<SubredditInfoListWrapper>
 
+    @GET("subreddits/mine/subscriber")
+    suspend fun getMySubscribedSubreddits(@Query("limit") limit: Int): Response<SubredditInfoListWrapper>
+
+    @GET("subreddits/mine/subscriber")
+    suspend fun getMySubscribedSubreddits(
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
+    ): Response<SubredditInfoListWrapper>
+
     @GET("api/multi/mine")
     suspend fun getMyMultis(): Response<List<MultiInfoWrapperBasic>>
 

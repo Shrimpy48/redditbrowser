@@ -8,16 +8,15 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.exoplayer2.DefaultLoadControl
-import com.google.android.exoplayer2.DefaultRenderersFactory
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
 import com.google.android.exoplayer2.source.ExtractorMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.PlayerView
-import com.google.android.exoplayer2.upstream.DataSource
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 
@@ -38,10 +37,7 @@ class FullscreenPostActivity : AppCompatActivity() {
         image = findViewById(R.id.fullscreen_image)
         video = findViewById(R.id.fullscreen_video)
 
-        player = ExoPlayerFactory.newSimpleInstance(
-            DefaultRenderersFactory(this),
-            DefaultTrackSelector(), DefaultLoadControl()
-        )
+        player = ExoPlayerFactory.newSimpleInstance(this, DefaultTrackSelector())
         video.player = player
         player.playWhenReady = true
         player.seekTo(0, 0)
@@ -59,28 +55,29 @@ class FullscreenPostActivity : AppCompatActivity() {
             }
             PostType.VIDEO -> {
                 video.visibility = VISIBLE
-                val mediaSource = ExtractorMediaSource.Factory(
-                    DefaultHttpDataSourceFactory(
-                        Util.getUserAgent(
-                            this,
-                            "RedditBrowser"
-                        )
-                    )
+                val dataSourceFactory = OkHttpDataSourceFactory(
+                    HttpClientBuilder.getClient(), Util.getUserAgent(
+                        this,
+                        "RedditBrowser"
+                    ), DefaultBandwidthMeter()
                 )
+                val mediaSource = ExtractorMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(url)
                 player.prepare(mediaSource, true, false)
             }
             PostType.VIDEO_DASH -> {
                 video.visibility = VISIBLE
-                val dataSourceFactory = DefaultHttpDataSourceFactory(
+                val dataSource = DefaultHttpDataSourceFactory(
                     Util.getUserAgent(
                         this,
                         "RedditBrowser"
                     )
-                ) as DataSource.Factory
-                val mediaSource =
-                    DashMediaSource.Factory(DefaultDashChunkSource.Factory(dataSourceFactory), dataSourceFactory)
-                        .createMediaSource(url)
+                )
+                val mediaSource = DashMediaSource.Factory(
+                    DefaultDashChunkSource.Factory(dataSource),
+                    dataSource
+                )
+                    .createMediaSource(url)
                 player.prepare(mediaSource, true, false)
             }
             else -> {
