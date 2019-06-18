@@ -6,8 +6,14 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
+import kotlinx.android.synthetic.main.url_post.view.*
 
 class UrlPostViewHolder(cardView: View) : RecyclerView.ViewHolder(cardView) {
+    private val titleView = cardView.titleView
+    private val subredditView = cardView.subredditView
+    private val authorView = cardView.authorView
+    private val urlView = cardView.urlView
+
     private var post: Post? = null
 
     companion object {
@@ -20,6 +26,11 @@ class UrlPostViewHolder(cardView: View) : RecyclerView.ViewHolder(cardView) {
 
     fun bind(post: Post?) {
         this.post = post
+        titleView.text = post?.title ?: "loading"
+        subredditView.text = post?.subreddit ?: ""
+        authorView.text = post?.author ?: ""
+
+        urlView.text = post?.url ?: ""
     }
 }
 

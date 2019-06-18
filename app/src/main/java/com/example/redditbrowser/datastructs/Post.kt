@@ -1,6 +1,5 @@
 package com.example.redditbrowser.datastructs
 
-import android.net.Uri
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
@@ -8,7 +7,7 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "posts",
-    indices = [Index(value = ["subreddit"], unique = false)]
+    indices = [Index(value = ["feed"], unique = false), Index(value = ["feedType"], unique = false)]
 )
 data class Post(
     @PrimaryKey
@@ -17,11 +16,20 @@ data class Post(
     val author: String,
     @ColumnInfo(collate = ColumnInfo.NOCASE)
     val subreddit: String,
-    val type: PostType,
-    val url: Uri? = null,
+    val type: Int,
+    val url: String? = null,
     val selftext: String? = null,
     val width: Int? = null,
     val height: Int? = null
 ) {
-    var feed = Feed("", -1)
+    var feed = ""
+    var feedType = -1
+
+    companion object {
+        const val TEXT = 0
+        const val IMAGE = 1
+        const val VIDEO = 2
+        const val DASH = 3
+        const val URL = 4
+    }
 }

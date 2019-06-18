@@ -21,7 +21,8 @@ class PostRepository(
     private fun insertResultIntoDb(feed: Feed, res: List<Post>) {
         db.runInTransaction {
             db.posts().insert(res.map { post ->
-                post.feed = feed
+                post.feed = feed.feed
+                post.feedType = feed.feedType
                 post
             })
         }
@@ -35,7 +36,7 @@ class PostRepository(
             override fun onComplete(result: List<Post>) {
                 executor.execute {
                     db.runInTransaction {
-                        db.posts().deleteByFeed(feed)
+                        db.posts().deleteByFeed(feed.feed, feed.feedType)
                         insertResultIntoDb(feed, result)
                     }
 
@@ -54,7 +55,7 @@ class PostRepository(
             refresh(feed)
         }
 
-        val livePagedList = db.posts().postsByFeed(feed).toLiveData(
+        val livePagedList = db.posts().postsByFeed(feed.feed, feed.feedType).toLiveData(
             pageSize = pageSize, boundaryCallback = callback
         )
 

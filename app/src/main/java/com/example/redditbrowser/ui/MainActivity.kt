@@ -1,5 +1,6 @@
 package com.example.redditbrowser.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -12,21 +13,28 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.paging.PagedList
 import com.example.redditbrowser.R
+import com.example.redditbrowser.database.PostDatabase
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_SPECIAL
 import com.example.redditbrowser.datastructs.NetworkState
 import com.example.redditbrowser.datastructs.Post
+import com.example.redditbrowser.repositories.PostRepository
 import com.example.redditbrowser.web.GlideApp
+import com.example.redditbrowser.web.HttpClientBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.content_main.*
+import okhttp3.Cache
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     companion object {
         const val DEFAULT_FEED = "Front Page"
         const val DEFAULT_FEED_TYPE = TYPE_SPECIAL
+        const val DEFAULT_COLS_LANDSCAPE = 2
+        const val DEFAULT_COLS_PORTRAIT = 1
     }
 
     private lateinit var model: FeedViewModel
@@ -56,8 +64,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navView.setNavigationItemSelectedListener(this)
 
 
+        val cacheSize: Long = 150 * 1024 * 1024
+
+        HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
+
         model = getViewModel()
         initAdapter()
+        initManager()
         initSwipeToRefresh()
         val feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         val feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
@@ -124,7 +137,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun getViewModel(): FeedViewModel {
-        return ViewModelProviders.of(this).get(FeedViewModel::class.java)
+        val db by lazy { PostDatabase.create(this, true) }
+        val executor = Executors.newFixedThreadPool(6)
+        val repository = PostRepository(db, executor)
+        return ViewModelProviders.of(this, FeedViewModel.Factory(repository)).get(FeedViewModel::class.java)
     }
 
     private fun initAdapter() {
@@ -136,6 +152,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         model.posts.observe(this, Observer<PagedList<Post>> {
             adapter.submitList(it)
         })
+    }
+
+    private fun initManager() {
+        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val spansLandscape = prefs.getInt("cols_landscape", DEFAULT_COLS_LANDSCAPE)
+        val spansPortrait = prefs.getInt("cols_portrait", DEFAULT_COLS_PORTRAIT)
     }
 
     private fun initSwipeToRefresh() {

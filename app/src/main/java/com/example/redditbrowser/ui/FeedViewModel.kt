@@ -4,10 +4,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations.map
 import androidx.lifecycle.Transformations.switchMap
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.repositories.PostRepository
 
-class FeedViewModel(repository: PostRepository) : ViewModel() {
+class FeedViewModel(private val repository: PostRepository) : ViewModel() {
 
     private val feedData = MutableLiveData<Feed>()
 
@@ -16,7 +17,6 @@ class FeedViewModel(repository: PostRepository) : ViewModel() {
     }
 
     val posts = switchMap(repoResult) { it.pagedList }!!
-    val networkState = switchMap(repoResult) { it.networkState }!!
     val refreshState = switchMap(repoResult) { it.refreshState }!!
 
     fun refresh() {
@@ -38,4 +38,11 @@ class FeedViewModel(repository: PostRepository) : ViewModel() {
 
     fun currentFeed() = feedData.value
 
+
+    class Factory(private val repository: PostRepository) : ViewModelProvider.Factory {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+            @Suppress("UNCHECKED_CAST")
+            return FeedViewModel(repository) as T
+        }
+    }
 }

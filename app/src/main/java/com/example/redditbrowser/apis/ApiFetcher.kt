@@ -1,6 +1,5 @@
 package com.example.redditbrowser.apis
 
-import android.net.Uri
 import android.util.Log
 import com.example.redditbrowser.apis.responses.GfyAuthRequest
 import com.example.redditbrowser.apis.responses.PostInfo
@@ -9,7 +8,6 @@ import com.example.redditbrowser.apis.services.ImgurApiService
 import com.example.redditbrowser.apis.services.RedditApiService
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.datastructs.Post
-import com.example.redditbrowser.datastructs.PostType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -88,26 +86,26 @@ object ApiFetcher {
         }
         val res = service!!.getImage(id)
         if (res.isSuccessful) {
-            val contentUri: Uri
-            val type: PostType
+            val contentUrl: String?
+            val type: Int
             val width: Int?
             val height: Int?
             when {
                 res.body()?.data?.mp4 != null -> {
-                    contentUri = Uri.parse(res.body()?.data?.mp4)
-                    type = PostType.VIDEO
+                    contentUrl = res.body()?.data?.mp4
+                    type = Post.VIDEO
                     width = res.body()?.data?.width
                     height = res.body()?.data?.height
                 }
                 res.body()?.data?.link != null -> {
-                    contentUri = Uri.parse(res.body()?.data?.link)
-                    type = PostType.IMAGE
+                    contentUrl = res.body()?.data?.link
+                    type = Post.IMAGE
                     width = res.body()?.data?.width
                     height = res.body()?.data?.height
                 }
                 else -> {
-                    contentUri = Uri.parse(url)
-                    type = PostType.URL
+                    contentUrl = url
+                    type = Post.URL
                     width = null
                     height = null
                 }
@@ -118,7 +116,7 @@ object ApiFetcher {
                 author,
                 subreddit,
                 type,
-                url = contentUri,
+                url = contentUrl,
                 width = width,
                 height = height
             )
@@ -142,28 +140,28 @@ object ApiFetcher {
         val res = service!!.getAlbumImages(id)
         if (res.isSuccessful) {
             // TODO fully handle albums
-            val contentUri: Uri
-            val type: PostType
+            val contentUrl: String?
+            val type: Int
             val width: Int?
             val height: Int?
             when {
                 res.body()?.data.isNullOrEmpty() -> throw Exception("No content")
 
                 res.body()?.data!![0].mp4 != null -> {
-                    contentUri = Uri.parse(res.body()?.data!![0].mp4)
-                    type = PostType.VIDEO
+                    contentUrl = res.body()?.data!![0].mp4
+                    type = Post.VIDEO
                     width = res.body()?.data!![0].width
                     height = res.body()?.data!![0].height
                 }
                 res.body()?.data!![0].link != null -> {
-                    contentUri = Uri.parse(res.body()?.data!![0].link)
-                    type = PostType.IMAGE
+                    contentUrl = res.body()?.data!![0].link
+                    type = Post.IMAGE
                     width = res.body()?.data!![0].width
                     height = res.body()?.data!![0].height
                 }
                 else -> {
-                    contentUri = Uri.parse(url)
-                    type = PostType.URL
+                    contentUrl = url
+                    type = Post.URL
                     width = null
                     height = null
                 }
@@ -174,7 +172,7 @@ object ApiFetcher {
                 author,
                 subreddit,
                 type,
-                url = contentUri,
+                url = contentUrl,
                 width = width,
                 height = height
             )
@@ -186,8 +184,8 @@ object ApiFetcher {
     private suspend fun parseGfy(name: String, title: String, subreddit: String, author: String, url: String): Post? {
         val id = url.substringAfterLast("/").substringBeforeLast(".").substringBefore("-")
         val token = getGfyToken()
-        val contentUri: Uri
-        val type: PostType
+        val contentUrl: String?
+        val type: Int
         val width: Int?
         val height: Int?
         var service: GfyApiService? = null
@@ -196,8 +194,8 @@ object ApiFetcher {
         }
         val res = service!!.getGfycat(id)
         if (res.isSuccessful) {
-            contentUri = Uri.parse(res.body()?.gfyItem?.mp4Url)
-            type = PostType.VIDEO
+            contentUrl = res.body()?.gfyItem?.mp4Url
+            type = Post.VIDEO
             width = res.body()?.gfyItem?.width
             height = res.body()?.gfyItem?.height
         } else {
@@ -210,7 +208,7 @@ object ApiFetcher {
             author,
             subreddit,
             type,
-            url = contentUri,
+            url = contentUrl,
             width = width,
             height = height
         )
@@ -221,10 +219,10 @@ object ApiFetcher {
         val subreddit = info.subreddit
         val name = info.name
         val author = info.author
-        val contentUri: Uri
+        val contentUrl: String?
         val width: Int?
         val height: Int?
-        val type: PostType
+        val type: Int
         val post: Post
         if (title == null || subreddit == null || name == null || author == null) {
             throw Exception("No data")
@@ -232,7 +230,7 @@ object ApiFetcher {
         when {
             info.isSelf != null && info.isSelf!! -> {
                 val body = info.selftext
-                type = PostType.TEXT
+                type = Post.TEXT
                 post = Post(
                     name,
                     title,
@@ -243,49 +241,49 @@ object ApiFetcher {
                 )
             }
             info.postHint == "image" -> {
-                contentUri = Uri.parse(info.url)
+                contentUrl = info.url
                 width = info.preview?.images!![0].source?.width
                 height = info.preview?.images!![0].source?.height
-                type = PostType.IMAGE
+                type = Post.IMAGE
                 post = Post(
                     name,
                     title,
                     author,
                     subreddit,
                     type,
-                    url = contentUri,
+                    url = contentUrl,
                     width = width,
                     height = height
                 )
             }
             info.secureMedia != null && info.secureMedia?.redditVideo != null -> {
-                contentUri = Uri.parse(info.secureMedia?.redditVideo?.dashUrl)
+                contentUrl = info.secureMedia?.redditVideo?.dashUrl
                 width = info.secureMedia?.redditVideo?.width
                 height = info.secureMedia?.redditVideo?.height
-                type = PostType.DASH
+                type = Post.DASH
                 post = Post(
                     name,
                     title,
                     author,
                     subreddit,
                     type,
-                    url = contentUri,
+                    url = contentUrl,
                     width = width,
                     height = height
                 )
             }
             info.media != null && info.media?.redditVideo != null -> {
-                contentUri = Uri.parse(info.media?.redditVideo?.dashUrl)
+                contentUrl = info.media?.redditVideo?.dashUrl
                 width = info.media?.redditVideo?.width
                 height = info.media?.redditVideo?.height
-                type = PostType.DASH
+                type = Post.DASH
                 post = Post(
                     name,
                     title,
                     author,
                     subreddit,
                     type,
-                    url = contentUri,
+                    url = contentUrl,
                     width = width,
                     height = height
                 )
@@ -300,31 +298,31 @@ object ApiFetcher {
                     ?: throw Exception("Could not fetch gfy content")
             }
             info.preview != null && info.preview?.redditVideoPreview != null -> {
-                contentUri = Uri.parse(info.preview?.redditVideoPreview?.dashUrl)
+                contentUrl = info.preview?.redditVideoPreview?.dashUrl
                 width = info.preview?.redditVideoPreview?.width
                 height = info.preview?.redditVideoPreview?.height
-                type = PostType.DASH
+                type = Post.DASH
                 post = Post(
                     name,
                     title,
                     author,
                     subreddit,
                     type,
-                    url = contentUri,
+                    url = contentUrl,
                     width = width,
                     height = height
                 )
             }
             else -> {
-                contentUri = Uri.parse(info.url)
-                type = PostType.URL
+                contentUrl = info.url
+                type = Post.URL
                 post = Post(
                     name,
                     title,
                     author,
                     subreddit,
                     type,
-                    url = contentUri
+                    url = contentUrl
                 )
             }
         }
