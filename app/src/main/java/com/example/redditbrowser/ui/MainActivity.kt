@@ -1,6 +1,7 @@
 package com.example.redditbrowser.ui
 
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -12,6 +13,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.paging.PagedList
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.redditbrowser.R
 import com.example.redditbrowser.database.PostDatabase
 import com.example.redditbrowser.datastructs.Feed
@@ -158,6 +160,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         val spansLandscape = prefs.getInt("cols_landscape", DEFAULT_COLS_LANDSCAPE)
         val spansPortrait = prefs.getInt("cols_portrait", DEFAULT_COLS_PORTRAIT)
+
+        val spanCount: Int =
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) spansLandscape
+            else spansPortrait
+        val viewManager = StaggeredGridLayoutManager(spanCount, StaggeredGridLayoutManager.VERTICAL)
+        list.layoutManager = viewManager
+        list.addItemDecoration(CardSpacer(8, 8))
     }
 
     private fun initSwipeToRefresh() {
