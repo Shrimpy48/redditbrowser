@@ -11,6 +11,8 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.redditbrowser.apis.ApiFetcher
+import com.example.redditbrowser.web.HttpClientBuilder
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.Player.REPEAT_MODE_ONE
 import com.google.android.exoplayer2.SimpleExoPlayer

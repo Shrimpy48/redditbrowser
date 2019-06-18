@@ -1,4 +1,4 @@
-package com.example.redditbrowser
+package com.example.redditbrowser.web
 
 import android.util.Log
 import okhttp3.Cache

@@ -1,6 +1,10 @@
-package com.example.redditbrowser
+package com.example.redditbrowser.apis
 
 import android.util.Log
+import com.example.redditbrowser.apis.services.*
+import com.example.redditbrowser.web.AgentInterceptor
+import com.example.redditbrowser.web.AuthenticationInterceptor
+import com.example.redditbrowser.web.HttpClientBuilder
 import okhttp3.Credentials
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -62,7 +66,8 @@ object ServiceGenerator {
         Credentials.basic(AuthValues.redditId, AuthValues.redditSecret)
     )
 
-    private val imgurAuthInterceptor = AuthenticationInterceptor("Client-ID ${AuthValues.imgurId}")
+    private val imgurAuthInterceptor =
+        AuthenticationInterceptor("Client-ID ${AuthValues.imgurId}")
 
     private var redditToken: String = ""
     private lateinit var redditTokenAuthInterceptor: AuthenticationInterceptor
@@ -86,9 +91,13 @@ object ServiceGenerator {
                 .addInterceptor(redditAgentInterceptor)
                 .addInterceptor(redditAuthInterceptor)
                 .build()
-            redditAuthBuilder = redditAuthBuilder.client(redditAuthClient)
+            redditAuthBuilder = redditAuthBuilder.client(
+                redditAuthClient
+            )
             redditAuth = redditAuthBuilder.build()
-            redditAuthService = redditAuth.create(RedditAuthApiService::class.java)
+            redditAuthService = redditAuth.create(
+                RedditAuthApiService::class.java
+            )
         }
 
         return redditAuthService
@@ -101,7 +110,8 @@ object ServiceGenerator {
         }
 
         if (redditToken != token) {
-            redditTokenAuthInterceptor = AuthenticationInterceptor("Bearer $token")
+            redditTokenAuthInterceptor =
+                AuthenticationInterceptor("Bearer $token")
             redditToken = token
         }
 
@@ -115,9 +125,13 @@ object ServiceGenerator {
                 .addInterceptor(redditAgentInterceptor)
                 .addInterceptor(redditTokenAuthInterceptor)
                 .build()
-            redditBuilder = redditBuilder.client(redditClient)
+            redditBuilder = redditBuilder.client(
+                redditClient
+            )
             reddit = redditBuilder.build()
-            redditService = reddit.create(RedditApiService::class.java)
+            redditService = reddit.create(
+                RedditApiService::class.java
+            )
         }
 
         return redditService
@@ -135,9 +149,13 @@ object ServiceGenerator {
             imgurClient = HttpClientBuilder.getNewBuilder()
                 .addInterceptor(imgurAuthInterceptor)
                 .build()
-            imgurBuilder = imgurBuilder.client(imgurClient)
+            imgurBuilder = imgurBuilder.client(
+                imgurClient
+            )
             imgur = imgurBuilder.build()
-            imgurService = imgur.create(ImgurApiService::class.java)
+            imgurService = imgur.create(
+                ImgurApiService::class.java
+            )
         }
 
         return imgurService
@@ -152,7 +170,8 @@ object ServiceGenerator {
         var needsBuilding = false
 
         if (gfyToken != token) {
-            gfyTokenAuthInterceptor = AuthenticationInterceptor("Bearer $token")
+            gfyTokenAuthInterceptor =
+                AuthenticationInterceptor("Bearer $token")
             gfyToken = token
         }
 
@@ -165,9 +184,13 @@ object ServiceGenerator {
             gfyClient = HttpClientBuilder.getNewBuilder()
                 .addInterceptor(gfyTokenAuthInterceptor)
                 .build()
-            gfyBuilder = gfyBuilder.client(gfyClient)
+            gfyBuilder = gfyBuilder.client(
+                gfyClient
+            )
             gfy = gfyBuilder.build()
-            gfyService = gfy.create(GfyApiService::class.java)
+            gfyService = gfy.create(
+                GfyApiService::class.java
+            )
         }
 
         return gfyService

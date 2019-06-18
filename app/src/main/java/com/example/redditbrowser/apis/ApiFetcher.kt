@@ -1,7 +1,15 @@
-package com.example.redditbrowser
+package com.example.redditbrowser.apis
 
 import android.net.Uri
 import android.util.Log
+import com.example.redditbrowser.PostPage
+import com.example.redditbrowser.PostType
+import com.example.redditbrowser.ProcessedPost
+import com.example.redditbrowser.apis.responses.GfyAuthRequest
+import com.example.redditbrowser.apis.responses.PostInfo
+import com.example.redditbrowser.apis.services.GfyApiService
+import com.example.redditbrowser.apis.services.ImgurApiService
+import com.example.redditbrowser.apis.services.RedditApiService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -98,7 +106,14 @@ object ApiFetcher {
                     height = null
                 }
             }
-            return ProcessedPost(title, type, subreddit, contentUrl = contentUri, width = width, height = height)
+            return ProcessedPost(
+                title,
+                type,
+                subreddit,
+                contentUrl = contentUri,
+                width = width,
+                height = height
+            )
         }
         Log.d("Imgur image", "ID $id not successfully fetched")
         val contentUri = Uri.parse(url)
@@ -141,7 +156,14 @@ object ApiFetcher {
                     height = null
                 }
             }
-            return ProcessedPost(title, type, subreddit, contentUrl = contentUri, width = width, height = height)
+            return ProcessedPost(
+                title,
+                type,
+                subreddit,
+                contentUrl = contentUri,
+                width = width,
+                height = height
+            )
         }
         Log.d("Imgur album", "ID $id not successfully fetched")
         val contentUri = Uri.parse(url)
@@ -173,7 +195,14 @@ object ApiFetcher {
             width = null
             height = null
         }
-        return ProcessedPost(title, type, subreddit, contentUrl = contentUri, width = width, height = height)
+        return ProcessedPost(
+            title,
+            type,
+            subreddit,
+            contentUrl = contentUri,
+            width = width,
+            height = height
+        )
     }
 
     private suspend fun parsePost(info: PostInfo): ProcessedPost? {
@@ -198,24 +227,46 @@ object ApiFetcher {
                 width = info.preview?.images!![0].source?.width
                 height = info.preview?.images!![0].source?.height
                 type = PostType.IMAGE
-                post = ProcessedPost(title, type, subreddit, contentUrl = contentUri, width = width, height = height)
+                post = ProcessedPost(
+                    title,
+                    type,
+                    subreddit,
+                    contentUrl = contentUri,
+                    width = width,
+                    height = height
+                )
             }
             info.secureMedia != null && info.secureMedia?.redditVideo != null -> {
                 contentUri = Uri.parse(info.secureMedia?.redditVideo?.dashUrl)
                 width = info.secureMedia?.redditVideo?.width
                 height = info.secureMedia?.redditVideo?.height
                 type = PostType.VIDEO_DASH
-                post = ProcessedPost(title, type, subreddit, contentUrl = contentUri, width = width, height = height)
+                post = ProcessedPost(
+                    title,
+                    type,
+                    subreddit,
+                    contentUrl = contentUri,
+                    width = width,
+                    height = height
+                )
             }
             info.media != null && info.media?.redditVideo != null -> {
                 contentUri = Uri.parse(info.media?.redditVideo?.dashUrl)
                 width = info.media?.redditVideo?.width
                 height = info.media?.redditVideo?.height
                 type = PostType.VIDEO_DASH
-                post = ProcessedPost(title, type, subreddit, contentUrl = contentUri, width = width, height = height)
+                post = ProcessedPost(
+                    title,
+                    type,
+                    subreddit,
+                    contentUrl = contentUri,
+                    width = width,
+                    height = height
+                )
             }
             info.domain != null && "imgur" in info.domain!! -> {
-                post = parseImgurImage(title, subreddit, info.url!!) ?: (parseImgurAlbum(title, subreddit, info.url!!)
+                post = parseImgurImage(title, subreddit, info.url!!)
+                    ?: (parseImgurAlbum(title, subreddit, info.url!!)
                     ?: return null)
             }
             info.domain != null && "gfycat" in info.domain!! -> {
@@ -226,7 +277,14 @@ object ApiFetcher {
                 width = info.preview?.redditVideoPreview?.width
                 height = info.preview?.redditVideoPreview?.height
                 type = PostType.VIDEO_DASH
-                post = ProcessedPost(title, type, subreddit, contentUrl = contentUri, width = width, height = height)
+                post = ProcessedPost(
+                    title,
+                    type,
+                    subreddit,
+                    contentUrl = contentUri,
+                    width = width,
+                    height = height
+                )
             }
             else -> {
                 contentUri = Uri.parse(info.url)

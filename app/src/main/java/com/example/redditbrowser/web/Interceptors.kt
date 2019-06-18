@@ -1,4 +1,4 @@
-package com.example.redditbrowser
+package com.example.redditbrowser.web
 
 import okhttp3.Interceptor
 import okhttp3.Response

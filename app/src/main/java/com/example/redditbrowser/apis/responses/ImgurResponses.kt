@@ -1,4 +1,4 @@
-package com.example.redditbrowser
+package com.example.redditbrowser.apis.responses
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
