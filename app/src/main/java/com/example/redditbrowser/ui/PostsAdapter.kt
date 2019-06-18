@@ -4,9 +4,13 @@ import android.view.ViewGroup
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.example.redditbrowser.GlideRequests
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
+import com.example.redditbrowser.ui.viewholders.ImagePostViewHolder
+import com.example.redditbrowser.ui.viewholders.TextPostViewHolder
+import com.example.redditbrowser.ui.viewholders.UrlPostViewHolder
+import com.example.redditbrowser.ui.viewholders.VideoPostViewHolder
+import com.example.redditbrowser.web.GlideRequests
 
 class PostsAdapter(private val glide: GlideRequests, private val retryCallback: () -> Unit) :
     PagedListAdapter<Post, RecyclerView.ViewHolder>(POST_COMPARATOR) {

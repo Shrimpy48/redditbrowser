@@ -11,12 +11,12 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.paging.PagedList
-import com.example.redditbrowser.GlideApp
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_SPECIAL
 import com.example.redditbrowser.datastructs.NetworkState
 import com.example.redditbrowser.datastructs.Post
+import com.example.redditbrowser.web.GlideApp
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
