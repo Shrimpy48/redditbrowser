@@ -1,6 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+                                   xmlns:tools="http://schemas.android.com/tools"
+                                   xmlns:app="http://schemas.android.com/apk/res-auto"
                                    android:layout_width="match_parent"
-                                   android:layout_height="match_parent">
+                                   android:layout_height="match_parent" app:contentPadding="2dp">
 
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/titleView"
+                    app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent"
+                    tools:text="Title"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                    app:layout_constraintEnd_toStartOf="@+id/subredditView" app:layout_constraintHorizontal_bias="0.0"
+                    android:layout_marginEnd="2dp"/>
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/subredditView" tools:text="subreddit"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
+            />
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/authorView"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Small" tools:text="author"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/titleView"
+                    app:layout_constraintEnd_toStartOf="@+id/subredditView"
+                    app:layout_constraintHorizontal_bias="0.0" android:layout_marginEnd="2dp"
+                    android:layout_marginTop="2dp" app:layout_constraintBottom_toBottomOf="parent"
+                    android:layout_marginBottom="2dp" app:layout_constraintVertical_bias="0.0"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:id="@+id/urlView" tools:text="https://www.example.com"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1"/>
+    </LinearLayout>
 </androidx.cardview.widget.CardView>
