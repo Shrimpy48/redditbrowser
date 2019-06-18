@@ -1,16 +1,18 @@
 <resources>
-    <string name="app_name">Reddit Browser</string>
-    <string name="title_activity_main">Browser for Reddit</string>
+
+
+    <string name="title_activity_main">Reddit Browser</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Reddit Browser</string>
-    <string name="nav_header_subtitle">subtitle</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
-    <string name="menu_multireddits">Your multireddits</string>
-    <string name="menu_subscribed">Your subscriptions</string>
-    <string name="menu_frontpage">Front page</string>
-    <string name="menu_all" translatable="false">all</string>
-    <string name="menu_popular" translatable="false">popular</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_gallery">Gallery</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <string name="menu_tools">Tools</string>
+    <string name="menu_share">Share</string>
+    <string name="menu_send">Send</string>
 </resources>
