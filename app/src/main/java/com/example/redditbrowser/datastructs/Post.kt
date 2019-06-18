@@ -1,5 +1,6 @@
 package com.example.redditbrowser.datastructs
 
+import android.net.Uri
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
@@ -17,6 +18,10 @@ data class Post(
     @ColumnInfo(collate = ColumnInfo.NOCASE)
     val subreddit: String,
     val type: PostType,
-    val url: String?,
-    val selftext: String?
-)
+    val url: Uri? = null,
+    val selftext: String? = null,
+    val width: Int? = null,
+    val height: Int? = null
+) {
+    var feed = Feed("", -1)
+}

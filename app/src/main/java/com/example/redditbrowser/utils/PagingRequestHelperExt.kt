@@ -3,6 +3,7 @@ package com.example.redditbrowser.utils
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.paging.PagingRequestHelper
+import com.example.redditbrowser.datastructs.NetworkState
 
 private fun getErrorMessage(report: PagingRequestHelper.StatusReport): String {
     return PagingRequestHelper.RequestType.values().mapNotNull {
@@ -15,9 +16,6 @@ fun PagingRequestHelper.createStatusLiveData(): LiveData<NetworkState> {
     addListener { report ->
         when {
             report.hasRunning() -> liveData.postValue(NetworkState.LOADING)
-            report.hasError() -> liveData.postValue(
-                NetworkState.error(getErrorMessage(report))
-            )
             else -> liveData.postValue(NetworkState.LOADED)
         }
     }
