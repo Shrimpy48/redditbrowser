@@ -12,7 +12,7 @@ import com.example.redditbrowser.ui.viewholders.UrlPostViewHolder
 import com.example.redditbrowser.ui.viewholders.VideoPostViewHolder
 import com.example.redditbrowser.web.GlideRequests
 
-class PostsAdapter(private val glide: GlideRequests, private val retryCallback: () -> Unit) :
+class PostsAdapter(private val glide: GlideRequests) :
     PagedListAdapter<Post, RecyclerView.ViewHolder>(POST_COMPARATOR) {
 
     companion object {
@@ -31,6 +31,7 @@ class PostsAdapter(private val glide: GlideRequests, private val retryCallback: 
             R.layout.image_post -> (holder as ImagePostViewHolder).bind(getItem(position))
             R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position))
             R.layout.url_post -> (holder as UrlPostViewHolder).bind(getItem(position))
+            else -> throw IllegalArgumentException("unknown view type ${getItemViewType(position)}")
         }
     }
 
@@ -41,6 +42,17 @@ class PostsAdapter(private val glide: GlideRequests, private val retryCallback: 
             R.layout.video_post -> VideoPostViewHolder.create(parent)
             R.layout.url_post -> UrlPostViewHolder.create(parent)
             else -> throw IllegalArgumentException("unknown view type $viewType")
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return when (getItem(position)?.type) {
+            Post.TEXT -> R.layout.text_post
+            Post.IMAGE -> R.layout.image_post
+            Post.VIDEO -> R.layout.video_post
+            Post.DASH -> R.layout.video_post
+            Post.URL -> R.layout.url_post
+            else -> throw IllegalArgumentException("Invalid post type ${getItem(position)?.type}")
         }
     }
 

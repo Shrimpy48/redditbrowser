@@ -3,6 +3,7 @@ package com.example.redditbrowser.ui
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -29,14 +30,16 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.content_main.*
 import okhttp3.Cache
 import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     companion object {
         const val DEFAULT_FEED = "Front Page"
         const val DEFAULT_FEED_TYPE = TYPE_SPECIAL
-        const val DEFAULT_COLS_LANDSCAPE = 2
+        const val DEFAULT_COLS_LANDSCAPE = 3
         const val DEFAULT_COLS_PORTRAIT = 1
+        const val DEFAULT_SPACING = 8f
     }
 
     private lateinit var model: FeedViewModel
@@ -71,8 +74,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
 
         model = getViewModel()
-        initAdapter()
-        initManager()
+        initList()
         initSwipeToRefresh()
         val feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         val feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
@@ -139,24 +141,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun getViewModel(): FeedViewModel {
-        val db by lazy { PostDatabase.create(this, true) }
+        val db by lazy { PostDatabase.create(this, false) }
         val executor = Executors.newFixedThreadPool(6)
         val repository = PostRepository(db, executor)
         return ViewModelProviders.of(this, FeedViewModel.Factory(repository)).get(FeedViewModel::class.java)
     }
 
-    private fun initAdapter() {
+    private fun initList() {
         val glide = GlideApp.with(this)
-        val adapter = PostsAdapter(glide) {
-            model.retry()
-        }
+        val adapter = PostsAdapter(glide)
         list.adapter = adapter
         model.posts.observe(this, Observer<PagedList<Post>> {
             adapter.submitList(it)
         })
-    }
 
-    private fun initManager() {
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         val spansLandscape = prefs.getInt("cols_landscape", DEFAULT_COLS_LANDSCAPE)
         val spansPortrait = prefs.getInt("cols_portrait", DEFAULT_COLS_PORTRAIT)
@@ -164,9 +162,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val spanCount: Int =
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) spansLandscape
             else spansPortrait
-        val viewManager = StaggeredGridLayoutManager(spanCount, StaggeredGridLayoutManager.VERTICAL)
-        list.layoutManager = viewManager
-        list.addItemDecoration(CardSpacer(8, 8))
+        (list.layoutManager as StaggeredGridLayoutManager).spanCount = spanCount
+
+        val spacing = prefs.getFloat("card_spacing", DEFAULT_SPACING)
+        val spacingPx: Int = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            spacing,
+            resources.displayMetrics
+        ).roundToInt()
+        list.addItemDecoration(CardSpacer(spacingPx, spacingPx))
     }
 
     private fun initSwipeToRefresh() {

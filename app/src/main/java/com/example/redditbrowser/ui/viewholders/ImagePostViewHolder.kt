@@ -20,7 +20,7 @@ class ImagePostViewHolder(cardView: View, private val glide: GlideRequests) : Re
     companion object {
         fun create(parent: ViewGroup, glide: GlideRequests): ImagePostViewHolder {
             val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.url_post, parent, false)
+                .inflate(R.layout.image_post, parent, false)
             return ImagePostViewHolder(view, glide)
         }
     }

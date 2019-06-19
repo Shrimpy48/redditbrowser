@@ -19,7 +19,7 @@ class TextPostViewHolder(cardView: View) : RecyclerView.ViewHolder(cardView) {
     companion object {
         fun create(parent: ViewGroup): TextPostViewHolder {
             val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.url_post, parent, false)
+                .inflate(R.layout.text_post, parent, false)
             return TextPostViewHolder(view)
         }
     }
