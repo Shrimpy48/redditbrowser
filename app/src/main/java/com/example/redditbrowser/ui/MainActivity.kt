@@ -24,6 +24,9 @@ import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.repositories.PostRepository
 import com.example.redditbrowser.web.GlideApp
 import com.example.redditbrowser.web.HttpClientBuilder
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
+import com.google.android.exoplayer2.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
@@ -149,7 +152,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun initList() {
         val glide = GlideApp.with(this)
-        val adapter = PostsAdapter(glide)
+        val dataSource = OkHttpDataSourceFactory(
+            HttpClientBuilder.getClient(),
+            Util.getUserAgent(this, "RedditBrowser"),
+            DefaultBandwidthMeter()
+        )
+        val adapter = PostsAdapter(this, glide, dataSource)
         list.adapter = adapter
         model.posts.observe(this, Observer<PagedList<Post>> {
             adapter.submitList(it)

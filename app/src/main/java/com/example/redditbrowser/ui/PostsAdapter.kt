@@ -1,5 +1,6 @@
 package com.example.redditbrowser.ui
 
+import android.content.Context
 import android.view.ViewGroup
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
@@ -11,8 +12,13 @@ import com.example.redditbrowser.ui.viewholders.TextPostViewHolder
 import com.example.redditbrowser.ui.viewholders.UrlPostViewHolder
 import com.example.redditbrowser.ui.viewholders.VideoPostViewHolder
 import com.example.redditbrowser.web.GlideRequests
+import com.google.android.exoplayer2.upstream.DataSource
 
-class PostsAdapter(private val glide: GlideRequests) :
+class PostsAdapter(
+    private val context: Context,
+    private val glide: GlideRequests,
+    private val dataSource: DataSource.Factory
+) :
     PagedListAdapter<Post, RecyclerView.ViewHolder>(POST_COMPARATOR) {
 
     companion object {
@@ -29,7 +35,7 @@ class PostsAdapter(private val glide: GlideRequests) :
         when (getItemViewType(position)) {
             R.layout.text_post -> (holder as TextPostViewHolder).bind(getItem(position))
             R.layout.image_post -> (holder as ImagePostViewHolder).bind(getItem(position))
-            R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position))
+            R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position), context)
             R.layout.url_post -> (holder as UrlPostViewHolder).bind(getItem(position))
             else -> throw IllegalArgumentException("unknown view type ${getItemViewType(position)}")
         }
@@ -39,10 +45,15 @@ class PostsAdapter(private val glide: GlideRequests) :
         return when (viewType) {
             R.layout.text_post -> TextPostViewHolder.create(parent)
             R.layout.image_post -> ImagePostViewHolder.create(parent, glide)
-            R.layout.video_post -> VideoPostViewHolder.create(parent)
+            R.layout.video_post -> VideoPostViewHolder.create(parent, dataSource)
             R.layout.url_post -> UrlPostViewHolder.create(parent)
             else -> throw IllegalArgumentException("unknown view type $viewType")
         }
+    }
+
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        super.onViewRecycled(holder)
+        if (holder.itemViewType == R.layout.video_post) (holder as VideoPostViewHolder).release()
     }
 
     override fun getItemViewType(position: Int): Int {
