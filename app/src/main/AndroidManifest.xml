@@ -12,11 +12,28 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             android:usesCleartextTraffic="true">
-        <activity android:name=".FullscreenPostActivity">
+        <activity
+                android:name=".ui.FullscreenPostActivity"
+                android:configChanges="orientation|keyboardHidden|screenSize"
+                android:label="@string/title_activity_fullscreen_post"
+                android:parentActivityName=".ui.MainActivity"
+                android:theme="@style/FullscreenTheme">
+            <meta-data
+                    android:name="android.support.PARENT_ACTIVITY"
+                    android:value="com.example.redditbrowser.ui.MainActivity"/>
         </activity>
         <activity
-                android:name=".MainActivity"
-                android:label="@string/title_activity_main">
+                android:name=".ui.SettingsActivity"
+                android:label="@string/title_activity_settings"
+                android:parentActivityName=".ui.MainActivity">
+            <meta-data
+                    android:name="android.support.PARENT_ACTIVITY"
+                    android:value="com.example.redditbrowser.ui.MainActivity"/>
+        </activity>
+        <activity
+                android:name=".ui.MainActivity"
+                android:label="@string/title_activity_main"
+                android:theme="@style/NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

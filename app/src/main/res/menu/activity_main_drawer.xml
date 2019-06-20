@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:tools="http://schemas.android.com/tools" xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
       tools:showIn="navigation_view">
 
     <group android:checkableBehavior="single">
@@ -14,30 +14,23 @@
                 android:id="@+id/nav_all"
                 android:title="@string/menu_all"/>
 
-        <item
-                android:title="@string/menu_multireddits"
-                app:showAsAction="ifRoom">
+        <item android:title="@string/menu_multis">
             <menu>
-                <group
-                        android:id="@+id/nav_multireddits"
-                        android:checkableBehavior="single">
+                <group android:checkableBehavior="single"
+                       android:id="@+id/nav_multis">
 
                 </group>
             </menu>
         </item>
 
-        <item
-                android:title="@string/menu_subscribed"
-                app:showAsAction="ifRoom">
+        <item android:title="@string/menu_subscribed">
             <menu>
-                <group
-                        android:id="@+id/nav_subscribed"
-                        android:checkableBehavior="single">
+                <group android:checkableBehavior="single"
+                       android:id="@+id/nav_subscribed">
 
                 </group>
             </menu>
         </item>
-
     </group>
 
 </menu>
