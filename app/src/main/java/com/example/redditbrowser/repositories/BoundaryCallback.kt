@@ -9,6 +9,7 @@ import java.util.concurrent.Executor
 
 class BoundaryCallback(
     private val feed: Feed,
+    private val pageSize: Int,
     private val handleResponse: (Feed, List<Post>) -> Unit,
     private val executor: Executor
 ) : PagedList.BoundaryCallback<Post>() {
@@ -19,7 +20,7 @@ class BoundaryCallback(
 
     override fun onZeroItemsLoaded() {
         helper.runIfNotRunning(PagingRequestHelper.RequestType.INITIAL) {
-            ApiFetcher.getFeedPosts(feed, object : ApiFetcher.Listener<List<Post>> {
+            ApiFetcher.getFeedPosts(feed, pageSize, object : ApiFetcher.Listener<List<Post>> {
                 override fun onComplete(result: List<Post>) {
                     insertItemsIntoDb(result, it)
                 }
@@ -33,7 +34,7 @@ class BoundaryCallback(
 
     override fun onItemAtEndLoaded(itemAtEnd: Post) {
         helper.runIfNotRunning(PagingRequestHelper.RequestType.AFTER) {
-            ApiFetcher.getFeedPosts(feed, itemAtEnd.name, count, object : ApiFetcher.Listener<List<Post>> {
+            ApiFetcher.getFeedPosts(feed, itemAtEnd.name, count, pageSize, object : ApiFetcher.Listener<List<Post>> {
                 override fun onComplete(result: List<Post>) {
                     insertItemsIntoDb(result, it)
                 }

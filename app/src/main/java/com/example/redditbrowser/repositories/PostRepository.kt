@@ -19,6 +19,8 @@ class PostRepository(
     private val executor: Executor
 ) {
 
+    private val networkPageSize = 10
+
     private fun insertResultIntoDb(feed: Feed, res: List<Post>) {
         db.runInTransaction {
             db.posts().insert(res.map { post ->
@@ -53,7 +55,7 @@ class PostRepository(
     }
 
     fun postsOfFeed(feed: Feed, pageSize: Int): Listing<Post> {
-        val callback = BoundaryCallback(feed, this::insertResultIntoDb, executor)
+        val callback = BoundaryCallback(feed, networkPageSize, this::insertResultIntoDb, executor)
 
         val refreshTrigger = MutableLiveData<Unit>()
         val refreshState = switchMap(refreshTrigger) {

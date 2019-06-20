@@ -372,6 +372,30 @@ object ApiFetcher {
         return posts.map { info -> parsePost(info.data!!) }
     }
 
+    private suspend fun getMyFrontPagePosts(limit: Int): List<Post> {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
+        }
+        val res = reddit!!.getMyFrontPagePosts(limit)
+        if (!res.isSuccessful) throw Exception("Unable to fetch front page")
+        val posts = res.body()?.data?.children!!
+        return posts.map { info -> parsePost(info.data!!) }
+    }
+
+    private suspend fun getMyFrontPagePosts(after: String?, count: Int, limit: Int): List<Post> {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
+        }
+        val res = reddit!!.getMyFrontPagePosts(after, count, limit)
+        if (!res.isSuccessful) throw Exception("Unable to fetch front page")
+        val posts = res.body()?.data?.children!!
+        return posts.map { info -> parsePost(info.data!!) }
+    }
+
     private suspend fun getMyMultiPosts(name: String): List<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
@@ -396,6 +420,30 @@ object ApiFetcher {
         return posts.map { info -> parsePost(info.data!!) }
     }
 
+    private suspend fun getMyMultiPosts(name: String, limit: Int): List<Post> {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
+        }
+        val res = reddit!!.getMyMultiPosts(name, limit)
+        if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
+        val posts = res.body()?.data?.children!!
+        return posts.map { info -> parsePost(info.data!!) }
+    }
+
+    private suspend fun getMyMultiPosts(name: String, after: String?, count: Int, limit: Int): List<Post> {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
+        }
+        val res = reddit!!.getMyMultiPosts(name, after, count, limit)
+        if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
+        val posts = res.body()?.data?.children!!
+        return posts.map { info -> parsePost(info.data!!) }
+    }
+
     private suspend fun getSubredditPosts(name: String): List<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
@@ -415,6 +463,30 @@ object ApiFetcher {
             reddit = ServiceGenerator.getRedditService(token)
         }
         val res = reddit!!.getSubredditPosts(name, after, count)
+        if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
+        val posts = res.body()?.data?.children!!
+        return posts.map { info -> parsePost(info.data!!) }
+    }
+
+    private suspend fun getSubredditPosts(name: String, limit: Int): List<Post> {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
+        }
+        val res = reddit!!.getSubredditPosts(name, limit)
+        if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
+        val posts = res.body()?.data?.children!!
+        return posts.map { info -> parsePost(info.data!!) }
+    }
+
+    private suspend fun getSubredditPosts(name: String, after: String?, count: Int, limit: Int): List<Post> {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
+        }
+        val res = reddit!!.getSubredditPosts(name, after, count, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
         val posts = res.body()?.data?.children!!
         return posts.map { info -> parsePost(info.data!!) }
@@ -485,6 +557,30 @@ object ApiFetcher {
         }
     }
 
+    fun getMyFrontPagePosts(limit: Int, listener: Listener<List<Post>>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res: List<Post>? = try {
+                getMyFrontPagePosts(limit)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
+    fun getMyFrontPagePosts(after: String?, count: Int, limit: Int, listener: Listener<List<Post>>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res: List<Post>? = try {
+                getMyFrontPagePosts(after, count, limit)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
     fun getMyMultiPosts(name: String, listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
             val res: List<Post>? = try {
@@ -509,6 +605,30 @@ object ApiFetcher {
         }
     }
 
+    fun getMyMultiPosts(name: String, limit: Int, listener: Listener<List<Post>>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res: List<Post>? = try {
+                getMyMultiPosts(name, limit)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
+    fun getMyMultiPosts(name: String, after: String?, count: Int, limit: Int, listener: Listener<List<Post>>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res: List<Post>? = try {
+                getMyMultiPosts(name, after, count, limit)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
     fun getSubredditPosts(name: String, listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
             val res: List<Post>? = try {
@@ -525,6 +645,30 @@ object ApiFetcher {
         CoroutineScope(Dispatchers.Main).launch {
             val res: List<Post>? = try {
                 getSubredditPosts(name, after, count)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
+    fun getSubredditPosts(name: String, limit: Int, listener: Listener<List<Post>>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res: List<Post>? = try {
+                getSubredditPosts(name, limit)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
+    fun getSubredditPosts(name: String, after: String?, count: Int, limit: Int, listener: Listener<List<Post>>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res: List<Post>? = try {
+                getSubredditPosts(name, after, count, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
                 null
@@ -582,6 +726,36 @@ object ApiFetcher {
 
             feed.feedType == Feed.TYPE_MULTIREDDIT ->
                 getMyMultiPosts(feed.feed, after, count, listener)
+
+            else -> throw IllegalArgumentException("Invalid feed type")
+        }
+    }
+
+    fun getFeedPosts(feed: Feed, limit: Int, listener: Listener<List<Post>>) {
+        when {
+            feed.feedType == Feed.TYPE_FRONTPAGE ->
+                getMyFrontPagePosts(limit, listener)
+
+            feed.feedType == Feed.TYPE_SUBREDDIT ->
+                getSubredditPosts(feed.feed, limit, listener)
+
+            feed.feedType == Feed.TYPE_MULTIREDDIT ->
+                getMyMultiPosts(feed.feed, limit, listener)
+
+            else -> throw IllegalArgumentException("Invalid feed type")
+        }
+    }
+
+    fun getFeedPosts(feed: Feed, after: String?, count: Int, limit: Int, listener: Listener<List<Post>>) {
+        when {
+            feed.feedType == Feed.TYPE_FRONTPAGE ->
+                getMyFrontPagePosts(after, count, limit, listener)
+
+            feed.feedType == Feed.TYPE_SUBREDDIT ->
+                getSubredditPosts(feed.feed, after, count, limit, listener)
+
+            feed.feedType == Feed.TYPE_MULTIREDDIT ->
+                getMyMultiPosts(feed.feed, after, count, limit, listener)
 
             else -> throw IllegalArgumentException("Invalid feed type")
         }

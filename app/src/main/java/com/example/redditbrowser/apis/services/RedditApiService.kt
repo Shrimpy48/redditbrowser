@@ -45,6 +45,16 @@ interface RedditApiService {
         @Query("count") count: Int
     ): Response<PostInfoListWrapper>
 
+    @GET("/")
+    suspend fun getMyFrontPagePosts(@Query("limit") limit: Int): Response<PostInfoListWrapper>
+
+    @GET("/")
+    suspend fun getMyFrontPagePosts(
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
+    ): Response<PostInfoListWrapper>
+
     @GET("r/{subreddit}")
     suspend fun getSubredditPosts(@Path("subreddit") subreddit: String): Response<PostInfoListWrapper>
 
@@ -55,6 +65,17 @@ interface RedditApiService {
         @Query("count") count: Int
     ): Response<PostInfoListWrapper>
 
+    @GET("r/{subreddit}")
+    suspend fun getSubredditPosts(@Path("subreddit") subreddit: String, @Query("limit") limit: Int): Response<PostInfoListWrapper>
+
+    @GET("r/{subreddit}")
+    suspend fun getSubredditPosts(
+        @Path("subreddit") subreddit: String,
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
+    ): Response<PostInfoListWrapper>
+
     @GET("me/m/{multi}")
     suspend fun getMyMultiPosts(@Path("multi") multi: String): Response<PostInfoListWrapper>
 
@@ -63,6 +84,17 @@ interface RedditApiService {
         @Path("multi") multi: String,
         @Query("after") after: String?,
         @Query("count") count: Int
+    ): Response<PostInfoListWrapper>
+
+    @GET("me/m/{multi}")
+    suspend fun getMyMultiPosts(@Path("multi") multi: String, @Query("limit") limit: Int): Response<PostInfoListWrapper>
+
+    @GET("me/m/{multi}")
+    suspend fun getMyMultiPosts(
+        @Path("multi") multi: String,
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
     ): Response<PostInfoListWrapper>
 
 }
