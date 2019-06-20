@@ -41,12 +41,17 @@
                     android:layout_marginEnd="2dp" app:layout_constraintEnd_toStartOf="@+id/subredditView"
                     app:layout_constraintHorizontal_bias="0.0"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
-        <com.google.android.exoplayer2.ui.PlayerView
+        <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:id="@+id/videoView"
-                app:surface_type="texture_view" app:resize_mode="fixed_width"
-                app:use_controller="false"
-                app:default_artwork="@drawable/ic_insert_photo_black_48dp"
-                app:use_artwork="true"/>
+                android:layout_height="match_parent" android:id="@+id/clickableFrame">
+
+            <com.google.android.exoplayer2.ui.PlayerView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/videoView"
+                    app:surface_type="texture_view" app:resize_mode="fixed_width"
+                    app:use_controller="false"
+                    app:default_artwork="@drawable/ic_image_placeholder"
+                    app:use_artwork="true"/>
+        </FrameLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -36,6 +36,6 @@ object HttpClientBuilder {
         return client
     }
 
-    fun getNewBuilder() = client.newBuilder()
+    fun getNewBuilder(): OkHttpClient.Builder = client.newBuilder()
 
 }

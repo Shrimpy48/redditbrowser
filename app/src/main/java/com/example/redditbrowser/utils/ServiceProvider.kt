@@ -5,7 +5,7 @@ import com.example.redditbrowser.database.PostDatabase
 import com.example.redditbrowser.repositories.PostRepository
 import java.util.concurrent.Executors
 
-open class ServiceProvider(val app: Application, val inMemory: Boolean) {
+open class ServiceProvider(val app: Application, private val inMemory: Boolean) {
 
     companion object {
         private val lock = Any()

@@ -13,9 +13,9 @@ class BoundaryCallback(
     private val executor: Executor
 ) : PagedList.BoundaryCallback<Post>() {
 
-    val helper = PagingRequestHelper(executor)
+    private val helper = PagingRequestHelper(executor)
 
-    var count = 0
+    private var count = 0
 
     override fun onZeroItemsLoaded() {
         helper.runIfNotRunning(PagingRequestHelper.RequestType.INITIAL) {

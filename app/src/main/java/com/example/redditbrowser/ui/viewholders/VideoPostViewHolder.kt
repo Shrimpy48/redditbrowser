@@ -1,6 +1,7 @@
 package com.example.redditbrowser.ui.viewholders
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,6 +10,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
+import com.example.redditbrowser.ui.FullscreenPostActivity
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -22,6 +24,7 @@ import kotlinx.android.synthetic.main.video_post.view.*
 
 class VideoPostViewHolder(
     cardView: View,
+    private val context: Context,
     private val showNsfw: Boolean,
     private val dataSourceFactory: DataSource.Factory
 ) :
@@ -30,6 +33,7 @@ class VideoPostViewHolder(
     private val subredditView = cardView.subredditView
     private val authorView = cardView.authorView
     private val videoView = cardView.videoView
+    private val clickableFrame = cardView.clickableFrame
 
     private var player: SimpleExoPlayer? = null
     private var mediaSource: MediaSource? = null
@@ -37,14 +41,19 @@ class VideoPostViewHolder(
     private var post: Post? = null
 
     companion object {
-        fun create(parent: ViewGroup, showNsfw: Boolean, factory: DataSource.Factory): VideoPostViewHolder {
+        fun create(
+            parent: ViewGroup,
+            context: Context,
+            showNsfw: Boolean,
+            factory: DataSource.Factory
+        ): VideoPostViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.video_post, parent, false)
-            return VideoPostViewHolder(view, showNsfw, factory)
+            return VideoPostViewHolder(view, context, showNsfw, factory)
         }
     }
 
-    fun bind(post: Post?, context: Context) {
+    fun bind(post: Post?) {
         Log.d("VideoPost", "Bound ${post?.title}")
         this.post = post
         titleView.text = post?.title ?: "loading"
@@ -65,6 +74,25 @@ class VideoPostViewHolder(
                 ).createMediaSource(Uri.parse(post.url))
                 else ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(Uri.parse(post.url))
             }
+
+            clickableFrame.setOnClickListener {
+                showFullscreen()
+            }
+        }
+    }
+
+    private fun showFullscreen() {
+        if (post != null) {
+            val intent = Intent().apply {
+                setClass(context, FullscreenPostActivity::class.java)
+                putExtra("type", post!!.type)
+                putExtra("title", post!!.title)
+                putExtra("subreddit", post!!.subreddit)
+                putExtra("author", post!!.author)
+                putExtra("selftext", post!!.selftext)
+                putExtra("url", post!!.url)
+            }
+            context.startActivity(intent)
         }
     }
 
@@ -72,6 +100,7 @@ class VideoPostViewHolder(
         if (mediaSource != null) {
             player?.playWhenReady = true
             player?.prepare(mediaSource)
+            player?.volume = 0f
         }
     }
 

@@ -1,9 +1,10 @@
 package com.example.redditbrowser.ui
 
 import android.app.Application
-import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
@@ -82,7 +83,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         model = getViewModel()
         initList()
         initSwipeToRefresh()
-        initMenu()
+        initMenu(navView)
         val feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         val feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
         model.showFeed(Feed(feed, feedType))
@@ -108,7 +109,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_settings -> {
+                showSettingsActivity()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -159,9 +163,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             DefaultBandwidthMeter()
         )
 
-        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
 
-        val showNsfw = prefs.getBoolean("show_nsfw", false)
+        val showNsfw = prefs.getBoolean("showNsfw", false)
+
+        Log.d("Settings", "showNsfw: $showNsfw")
 
         val adapter = PostsAdapter(this, showNsfw, glide, dataSource)
         list.adapter = adapter
@@ -169,15 +175,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             adapter.submitList(it)
         })
 
-        val spansLandscape = prefs.getInt("cols_landscape", DEFAULT_COLS_LANDSCAPE)
-        val spansPortrait = prefs.getInt("cols_portrait", DEFAULT_COLS_PORTRAIT)
+        val spansLandscapeStr = prefs.getString("landCols", null)
+        val spansPortraitStr = prefs.getString("portCols", null)
+
+        val spansLandscape = spansLandscapeStr?.toInt() ?: DEFAULT_COLS_LANDSCAPE
+        val spansPortrait = spansPortraitStr?.toInt() ?: DEFAULT_COLS_PORTRAIT
 
         val spanCount: Int =
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) spansLandscape
             else spansPortrait
         (list.layoutManager as StaggeredGridLayoutManager).spanCount = spanCount
 
-        val spacing = prefs.getFloat("card_spacing", DEFAULT_SPACING)
+        val spacingStr = prefs.getString("cardSpacing", null)
+        val spacing = spacingStr?.toFloat() ?: DEFAULT_SPACING
+
         val spacingPx: Int = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             spacing,
@@ -195,10 +206,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    private fun initMenu() {
-        val menu = findViewById<NavigationView>(R.id.nav_view).menu
+    private fun initMenu(navView: NavigationView) {
+        val menu = navView.menu
         fetchMultis(menu)
         fetchSubreddits(menu)
+
+        when (DEFAULT_FEED_TYPE) {
+            TYPE_FRONTPAGE -> navView.setCheckedItem(R.id.nav_frontpage)
+        }
     }
 
     private fun fetchSubreddits(menu: Menu) {
@@ -232,5 +247,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 //            list.scrollToPosition(0)  // This causes StaggeredGridLayoutManager to draw views offscreen due to a bug
             (list.adapter as? PostsAdapter)?.submitList(null)
         }
+    }
+
+    private fun showSettingsActivity() {
+        val activity = this
+        val intent = Intent().apply {
+            setClass(activity, SettingsActivity::class.java)
+        }
+        startActivity(intent)
     }
 }

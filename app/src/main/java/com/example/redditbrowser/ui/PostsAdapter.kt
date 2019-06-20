@@ -38,7 +38,7 @@ class PostsAdapter(
         when (getItemViewType(position)) {
             R.layout.text_post -> (holder as TextPostViewHolder).bind(getItem(position))
             R.layout.image_post -> (holder as ImagePostViewHolder).bind(getItem(position))
-            R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position), context)
+            R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position))
             R.layout.url_post -> (holder as UrlPostViewHolder).bind(getItem(position))
             else -> throw IllegalArgumentException("unknown view type ${getItemViewType(position)}")
         }
@@ -47,9 +47,9 @@ class PostsAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         Log.d("PostsAdapter", "Holder created")
         return when (viewType) {
-            R.layout.text_post -> TextPostViewHolder.create(parent, showNsfw)
-            R.layout.image_post -> ImagePostViewHolder.create(parent, showNsfw, glide)
-            R.layout.video_post -> VideoPostViewHolder.create(parent, showNsfw, dataSource)
+            R.layout.text_post -> TextPostViewHolder.create(parent, context, showNsfw)
+            R.layout.image_post -> ImagePostViewHolder.create(parent, context, showNsfw, glide)
+            R.layout.video_post -> VideoPostViewHolder.create(parent, context, showNsfw, dataSource)
             R.layout.url_post -> UrlPostViewHolder.create(parent, showNsfw)
             else -> throw IllegalArgumentException("unknown view type $viewType")
         }
