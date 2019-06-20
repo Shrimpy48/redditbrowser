@@ -44,6 +44,6 @@
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:id="@+id/urlView" tools:text="https://www.example.com"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body1"/>
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1" android:autoLink="web"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

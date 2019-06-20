@@ -16,6 +16,7 @@ data class Post(
     val author: String,
     @ColumnInfo(collate = ColumnInfo.NOCASE)
     val subreddit: String,
+    val nsfw: Boolean,
     val type: Int,
     val url: String? = null,
     val selftext: String? = null,

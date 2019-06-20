@@ -45,6 +45,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/videoView"
                 app:surface_type="texture_view" app:resize_mode="fixed_width"
-                app:use_controller="false"/>
+                app:use_controller="false"
+                app:default_artwork="@drawable/ic_insert_photo_black_48dp"
+                app:use_artwork="true"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

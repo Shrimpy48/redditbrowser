@@ -77,6 +77,7 @@ object ApiFetcher {
         title: String,
         subreddit: String,
         author: String,
+        isNsfw: Boolean,
         url: String
     ): Post? {
         val id = url.substringAfterLast("/").substringBeforeLast(".")
@@ -115,13 +116,14 @@ object ApiFetcher {
                 title,
                 author,
                 subreddit,
+                isNsfw,
                 type,
                 url = contentUrl,
                 width = width,
                 height = height
             )
         }
-        Log.d("Imgur image", "ID $id not successfully fetched")
+        Log.d("Imgur image", "ID $id not successfully fetched (code ${res.code()})")
         return null
     }
 
@@ -130,6 +132,7 @@ object ApiFetcher {
         title: String,
         subreddit: String,
         author: String,
+        isNsfw: Boolean,
         url: String
     ): Post? {
         val id = url.substringAfterLast("/").substringBeforeLast(".")
@@ -171,17 +174,25 @@ object ApiFetcher {
                 title,
                 author,
                 subreddit,
+                isNsfw,
                 type,
                 url = contentUrl,
                 width = width,
                 height = height
             )
         }
-        Log.d("Imgur album", "ID $id not successfully fetched")
+        Log.d("Imgur album", "ID $id not successfully fetched (code ${res.code()})")
         return null
     }
 
-    private suspend fun parseGfy(name: String, title: String, subreddit: String, author: String, url: String): Post? {
+    private suspend fun parseGfy(
+        name: String,
+        title: String,
+        subreddit: String,
+        author: String,
+        isNsfw: Boolean,
+        url: String
+    ): Post? {
         val id = url.substringAfterLast("/").substringBeforeLast(".").substringBefore("-")
         val token = getGfyToken()
         val contentUrl: String?
@@ -199,7 +210,7 @@ object ApiFetcher {
             width = res.body()?.gfyItem?.width
             height = res.body()?.gfyItem?.height
         } else {
-            Log.d("Gfy", "ID $id not successfully fetched")
+            Log.d("Gfy", "ID $id not successfully fetched (code ${res.code()})")
             return null
         }
         return Post(
@@ -207,6 +218,7 @@ object ApiFetcher {
             title,
             author,
             subreddit,
+            isNsfw,
             type,
             url = contentUrl,
             width = width,
@@ -219,12 +231,13 @@ object ApiFetcher {
         val subreddit = info.subreddit
         val name = info.name
         val author = info.author
+        val isNsfw = info.over18
         val contentUrl: String?
         val width: Int?
         val height: Int?
         val type: Int
         val post: Post
-        if (title == null || subreddit == null || name == null || author == null) {
+        if (title == null || subreddit == null || name == null || author == null || isNsfw == null) {
             throw Exception("No data")
         }
         when {
@@ -236,9 +249,19 @@ object ApiFetcher {
                     title,
                     author,
                     subreddit,
+                    isNsfw,
                     type,
                     selftext = body
                 )
+            }
+            info.domain != null && "imgur" in info.domain!! -> {
+                post = parseImgurImage(name, title, subreddit, author, isNsfw, info.url!!)
+                    ?: (parseImgurAlbum(name, title, subreddit, author, isNsfw, info.url!!)
+                        ?: throw Exception("Could not fetch imgur content"))
+            }
+            info.domain != null && "gfycat" in info.domain!! -> {
+                post = parseGfy(name, title, subreddit, author, isNsfw, info.url!!)
+                    ?: throw Exception("Could not fetch gfy content")
             }
             info.postHint == "image" -> {
                 contentUrl = info.url
@@ -250,6 +273,7 @@ object ApiFetcher {
                     title,
                     author,
                     subreddit,
+                    isNsfw,
                     type,
                     url = contentUrl,
                     width = width,
@@ -266,6 +290,7 @@ object ApiFetcher {
                     title,
                     author,
                     subreddit,
+                    isNsfw,
                     type,
                     url = contentUrl,
                     width = width,
@@ -282,20 +307,12 @@ object ApiFetcher {
                     title,
                     author,
                     subreddit,
+                    isNsfw,
                     type,
                     url = contentUrl,
                     width = width,
                     height = height
                 )
-            }
-            info.domain != null && "imgur" in info.domain!! -> {
-                post = parseImgurImage(name, title, subreddit, author, info.url!!)
-                    ?: (parseImgurAlbum(name, title, subreddit, author, info.url!!)
-                        ?: throw Exception("Could not fetch imgur content"))
-            }
-            info.domain != null && "gfycat" in info.domain!! -> {
-                post = parseGfy(name, title, subreddit, author, info.url!!)
-                    ?: throw Exception("Could not fetch gfy content")
             }
             info.preview != null && info.preview?.redditVideoPreview != null -> {
                 contentUrl = info.preview?.redditVideoPreview?.dashUrl
@@ -307,6 +324,7 @@ object ApiFetcher {
                     title,
                     author,
                     subreddit,
+                    isNsfw,
                     type,
                     url = contentUrl,
                     width = width,
@@ -321,6 +339,7 @@ object ApiFetcher {
                     title,
                     author,
                     subreddit,
+                    isNsfw,
                     type,
                     url = contentUrl
                 )
@@ -444,55 +463,103 @@ object ApiFetcher {
 
     fun getMyFrontPagePosts(listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getMyFrontPagePosts())
+            val res: List<Post>? = try {
+                getMyFrontPagePosts()
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getMyFrontPagePosts(after: String?, count: Int, listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getMyFrontPagePosts(after, count))
+            val res: List<Post>? = try {
+                getMyFrontPagePosts(after, count)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getMyMultiPosts(name: String, listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getMyMultiPosts(name))
+            val res: List<Post>? = try {
+                getMyMultiPosts(name)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getMyMultiPosts(name: String, after: String?, count: Int, listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getMyMultiPosts(name, after, count))
+            val res: List<Post>? = try {
+                getMyMultiPosts(name, after, count)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getSubredditPosts(name: String, listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getSubredditPosts(name))
+            val res: List<Post>? = try {
+                getSubredditPosts(name)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getSubredditPosts(name: String, after: String?, count: Int, listener: Listener<List<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getSubredditPosts(name, after, count))
+            val res: List<Post>? = try {
+                getSubredditPosts(name, after, count)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getMyMultis(listener: Listener<List<String>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getMyMultis())
+            val res: List<String>? = try {
+                getMyMultis()
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getMySubscribedSubreddits(listener: Listener<List<String>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            listener.onComplete(getMySubscribedSubreddits())
+            val res: List<String>? = try {
+                getMySubscribedSubreddits()
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
         }
     }
 
     fun getFeedPosts(feed: Feed, listener: Listener<List<Post>>) {
         when {
-            feed.feedType == Feed.TYPE_SPECIAL && feed.feed == "Front Page" ->
+            feed.feedType == Feed.TYPE_FRONTPAGE ->
                 getMyFrontPagePosts(listener)
 
             feed.feedType == Feed.TYPE_SUBREDDIT ->
@@ -507,7 +574,7 @@ object ApiFetcher {
 
     fun getFeedPosts(feed: Feed, after: String?, count: Int, listener: Listener<List<Post>>) {
         when {
-            feed.feedType == Feed.TYPE_SPECIAL && feed.feed == "Front Page" ->
+            feed.feedType == Feed.TYPE_FRONTPAGE ->
                 getMyFrontPagePosts(after, count, listener)
 
             feed.feedType == Feed.TYPE_SUBREDDIT ->
@@ -522,6 +589,8 @@ object ApiFetcher {
 
     interface Listener<T> {
         fun onComplete(result: T)
+
+        fun onFailure(t: Throwable)
     }
 
 }

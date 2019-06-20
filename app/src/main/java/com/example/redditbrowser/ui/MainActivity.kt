@@ -1,8 +1,10 @@
 package com.example.redditbrowser.ui
 
+import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
@@ -16,12 +18,14 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.redditbrowser.R
-import com.example.redditbrowser.database.PostDatabase
+import com.example.redditbrowser.apis.ApiFetcher
 import com.example.redditbrowser.datastructs.Feed
-import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_SPECIAL
+import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_FRONTPAGE
+import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_MULTIREDDIT
+import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_SUBREDDIT
 import com.example.redditbrowser.datastructs.NetworkState
 import com.example.redditbrowser.datastructs.Post
-import com.example.redditbrowser.repositories.PostRepository
+import com.example.redditbrowser.utils.ServiceProvider
 import com.example.redditbrowser.web.GlideApp
 import com.example.redditbrowser.web.HttpClientBuilder
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
@@ -32,14 +36,13 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.content_main.*
 import okhttp3.Cache
-import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     companion object {
-        const val DEFAULT_FEED = "Front Page"
-        const val DEFAULT_FEED_TYPE = TYPE_SPECIAL
+        const val DEFAULT_FEED = ""
+        const val DEFAULT_FEED_TYPE = TYPE_FRONTPAGE
         const val DEFAULT_COLS_LANDSCAPE = 3
         const val DEFAULT_COLS_PORTRAIT = 1
         const val DEFAULT_SPACING = 8f
@@ -79,6 +82,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         model = getViewModel()
         initList()
         initSwipeToRefresh()
+        initMenu()
         val feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         val feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
         model.showFeed(Feed(feed, feedType))
@@ -111,26 +115,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         // Handle navigation view item clicks here.
-        when (item.itemId) {
-            R.id.nav_home -> {
-                // Handle the camera action
-            }
-            R.id.nav_gallery -> {
 
+        when (item.groupId) {
+            R.id.nav_multis -> {
+                updateFeed(item.title as String, TYPE_MULTIREDDIT)
             }
-            R.id.nav_slideshow -> {
 
+            R.id.nav_subscribed -> {
+                updateFeed(item.title as String, TYPE_SUBREDDIT)
             }
-            R.id.nav_tools -> {
 
-            }
-            R.id.nav_share -> {
-
-            }
-            R.id.nav_send -> {
-
+            else -> {
+                if (item.itemId == R.id.nav_frontpage) {
+                    updateFeed(item.title as String, TYPE_FRONTPAGE)
+                } else {
+                    updateFeed(item.title as String, TYPE_SUBREDDIT)
+                }
             }
         }
+
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
@@ -144,26 +147,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun getViewModel(): FeedViewModel {
-        val db by lazy { PostDatabase.create(this, false) }
-        val executor = Executors.newFixedThreadPool(6)
-        val repository = PostRepository(db, executor)
+        val repository = ServiceProvider.instance(this.applicationContext as Application, false).getRepository()
         return ViewModelProviders.of(this, FeedViewModel.Factory(repository)).get(FeedViewModel::class.java)
     }
 
     private fun initList() {
-        val glide = GlideApp.with(this)
+        val glide = GlideApp.with(this@MainActivity)
         val dataSource = OkHttpDataSourceFactory(
             HttpClientBuilder.getClient(),
             Util.getUserAgent(this, "RedditBrowser"),
             DefaultBandwidthMeter()
         )
-        val adapter = PostsAdapter(this, glide, dataSource)
+
+        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+        val showNsfw = prefs.getBoolean("show_nsfw", false)
+
+        val adapter = PostsAdapter(this, showNsfw, glide, dataSource)
         list.adapter = adapter
         model.posts.observe(this, Observer<PagedList<Post>> {
             adapter.submitList(it)
         })
 
-        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         val spansLandscape = prefs.getInt("cols_landscape", DEFAULT_COLS_LANDSCAPE)
         val spansPortrait = prefs.getInt("cols_portrait", DEFAULT_COLS_PORTRAIT)
 
@@ -190,9 +195,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    private fun initMenu() {
+        val menu = findViewById<NavigationView>(R.id.nav_view).menu
+        fetchMultis(menu)
+        fetchSubreddits(menu)
+    }
+
+    private fun fetchSubreddits(menu: Menu) {
+        ApiFetcher.getMySubscribedSubreddits(object : ApiFetcher.Listener<List<String>> {
+            override fun onComplete(result: List<String>) {
+                for (subreddit in result)
+                    menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
+            }
+
+            override fun onFailure(t: Throwable) {
+                Log.e("Subreddit fetching", t.localizedMessage)
+            }
+        })
+    }
+
+    private fun fetchMultis(menu: Menu) {
+        ApiFetcher.getMyMultis(object : ApiFetcher.Listener<List<String>> {
+            override fun onComplete(result: List<String>) {
+                for (multi in result)
+                    menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
+            }
+
+            override fun onFailure(t: Throwable) {
+                Log.e("Multi fetching", t.localizedMessage)
+            }
+        })
+    }
+
     private fun updateFeed(feed: String, feedType: Int) {
         if (model.showFeed(Feed(feed, feedType))) {
-            list.scrollToPosition(0)
+//            list.scrollToPosition(0)  // This causes StaggeredGridLayoutManager to draw views offscreen due to a bug
             (list.adapter as? PostsAdapter)?.submitList(null)
         }
     }

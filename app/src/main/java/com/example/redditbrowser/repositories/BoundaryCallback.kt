@@ -5,7 +5,6 @@ import androidx.paging.PagingRequestHelper
 import com.example.redditbrowser.apis.ApiFetcher
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.datastructs.Post
-import com.example.redditbrowser.utils.createStatusLiveData
 import java.util.concurrent.Executor
 
 class BoundaryCallback(
@@ -15,7 +14,6 @@ class BoundaryCallback(
 ) : PagedList.BoundaryCallback<Post>() {
 
     val helper = PagingRequestHelper(executor)
-    val networkState = helper.createStatusLiveData()
 
     var count = 0
 
@@ -24,7 +22,10 @@ class BoundaryCallback(
             ApiFetcher.getFeedPosts(feed, object : ApiFetcher.Listener<List<Post>> {
                 override fun onComplete(result: List<Post>) {
                     insertItemsIntoDb(result, it)
-                    count += result.size
+                }
+
+                override fun onFailure(t: Throwable) {
+                    it.recordFailure(t)
                 }
             })
         }
@@ -35,16 +36,22 @@ class BoundaryCallback(
             ApiFetcher.getFeedPosts(feed, itemAtEnd.name, count, object : ApiFetcher.Listener<List<Post>> {
                 override fun onComplete(result: List<Post>) {
                     insertItemsIntoDb(result, it)
-                    count += result.size
+                }
+
+                override fun onFailure(t: Throwable) {
+                    it.recordFailure(t)
                 }
             })
         }
     }
 
-    private fun insertItemsIntoDb(resp: List<Post>, cb: PagingRequestHelper.Request.Callback) {
+    override fun onItemAtFrontLoaded(itemAtFront: Post) {}
+
+    private fun insertItemsIntoDb(resp: List<Post>, it: PagingRequestHelper.Request.Callback) {
+        count += resp.size
         executor.execute {
             handleResponse(feed, resp)
-            cb.recordSuccess()
+            it.recordSuccess()
         }
     }
 }

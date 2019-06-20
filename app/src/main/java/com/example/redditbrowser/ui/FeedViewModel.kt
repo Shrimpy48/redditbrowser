@@ -31,11 +31,6 @@ class FeedViewModel(private val repository: PostRepository) : ViewModel() {
         return true
     }
 
-    fun retry() {
-        val listing = repoResult?.value
-        listing?.retry?.invoke()
-    }
-
     fun currentFeed() = feedData.value
 
 

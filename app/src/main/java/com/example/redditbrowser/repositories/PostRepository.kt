@@ -1,5 +1,6 @@
 package com.example.redditbrowser.repositories
 
+import android.util.Log
 import androidx.annotation.MainThread
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -43,6 +44,10 @@ class PostRepository(
                     networkState.postValue(NetworkState.LOADED)
                 }
             }
+
+            override fun onFailure(t: Throwable) {
+                Log.e("Refresh", t.localizedMessage)
+            }
         })
         return networkState
     }
@@ -61,8 +66,6 @@ class PostRepository(
 
         return Listing(
             pagedList = livePagedList,
-            networkState = callback.networkState,
-            retry = { callback.helper.retryAllFailed() },
             refresh = { refreshTrigger.value = null },
             refreshState = refreshState
         )

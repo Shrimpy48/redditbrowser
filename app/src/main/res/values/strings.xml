@@ -16,4 +16,9 @@
     <string name="menu_share">Share</string>
     <string name="menu_send">Send</string>
     <string name="app_name">Browser for Reddit</string>
+    <string name="menu_frontpage">Front Page</string>
+    <string name="menu_popular">popular</string>
+    <string name="menu_all">all</string>
+    <string name="menu_multis">My Multireddits</string>
+    <string name="menu_subscribed">My Subscribed Subreddits</string>
 </resources>

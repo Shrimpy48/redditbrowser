@@ -4,6 +4,7 @@ import android.util.Log
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import java.util.concurrent.TimeUnit
 
 object HttpClientBuilder {
 
@@ -15,6 +16,10 @@ object HttpClientBuilder {
 
     private var builder = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .callTimeout(5, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
 
     private var client = builder.build()
 
