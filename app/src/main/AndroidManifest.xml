@@ -17,7 +17,7 @@
                 android:configChanges="orientation|keyboardHidden|screenSize"
                 android:label="@string/title_activity_fullscreen_post"
                 android:parentActivityName=".ui.MainActivity"
-                android:theme="@style/FullscreenTheme">
+                android:theme="@style/NoActionBar">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="com.example.redditbrowser.ui.MainActivity"/>
