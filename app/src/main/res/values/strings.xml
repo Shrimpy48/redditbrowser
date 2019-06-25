@@ -37,4 +37,5 @@
     <string name="port_cols_title">Number of columns (portrait)</string>
     <string name="card_spacing_title">Spacing between cards</string>
     <string name="show_nsfw_title">Show NSFW post content</string>
+    <string name="post_loading">Loading…</string>
 </resources>
