@@ -8,9 +8,7 @@ import com.example.redditbrowser.apis.services.ImgurApiService
 import com.example.redditbrowser.apis.services.RedditApiService
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.datastructs.Post
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -357,7 +355,7 @@ object ApiFetcher {
         val res = reddit!!.getMyFrontPagePosts()
         if (!res.isSuccessful) throw Exception("Unable to fetch front page")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyFrontPagePosts(after: String?, count: Int): List<Post> {
@@ -369,7 +367,7 @@ object ApiFetcher {
         val res = reddit!!.getMyFrontPagePosts(after, count)
         if (!res.isSuccessful) throw Exception("Unable to fetch front page")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyFrontPagePosts(limit: Int): List<Post> {
@@ -381,7 +379,7 @@ object ApiFetcher {
         val res = reddit!!.getMyFrontPagePosts(limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch front page")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyFrontPagePosts(after: String?, count: Int, limit: Int): List<Post> {
@@ -393,7 +391,7 @@ object ApiFetcher {
         val res = reddit!!.getMyFrontPagePosts(after, count, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch front page")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyMultiPosts(name: String): List<Post> {
@@ -405,7 +403,7 @@ object ApiFetcher {
         val res = reddit!!.getMyMultiPosts(name)
         if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyMultiPosts(name: String, after: String?, count: Int): List<Post> {
@@ -417,7 +415,7 @@ object ApiFetcher {
         val res = reddit!!.getMyMultiPosts(name, after, count)
         if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyMultiPosts(name: String, limit: Int): List<Post> {
@@ -429,7 +427,7 @@ object ApiFetcher {
         val res = reddit!!.getMyMultiPosts(name, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyMultiPosts(name: String, after: String?, count: Int, limit: Int): List<Post> {
@@ -441,7 +439,7 @@ object ApiFetcher {
         val res = reddit!!.getMyMultiPosts(name, after, count, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getSubredditPosts(name: String): List<Post> {
@@ -453,7 +451,7 @@ object ApiFetcher {
         val res = reddit!!.getSubredditPosts(name)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getSubredditPosts(name: String, after: String?, count: Int): List<Post> {
@@ -465,7 +463,7 @@ object ApiFetcher {
         val res = reddit!!.getSubredditPosts(name, after, count)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getSubredditPosts(name: String, limit: Int): List<Post> {
@@ -477,7 +475,7 @@ object ApiFetcher {
         val res = reddit!!.getSubredditPosts(name, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getSubredditPosts(name: String, after: String?, count: Int, limit: Int): List<Post> {
@@ -489,7 +487,7 @@ object ApiFetcher {
         val res = reddit!!.getSubredditPosts(name, after, count, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
         val posts = res.body()?.data?.children!!
-        return posts.map { info -> parsePost(info.data!!) }
+        return posts.pmap { info -> parsePost(info.data!!) }
     }
 
     private suspend fun getMyMultis(): List<String> {
@@ -530,6 +528,10 @@ object ApiFetcher {
             count += res.body()?.data?.dist!!
         }
         return names
+    }
+
+    suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
+        map { async { f(it) } }.map { it.await() }
     }
 
 

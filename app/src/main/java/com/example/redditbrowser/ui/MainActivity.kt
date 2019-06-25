@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             else -> {
                 if (item.itemId == R.id.nav_frontpage) {
-                    updateFeed(item.title as String, TYPE_FRONTPAGE)
+                    updateFeed("", TYPE_FRONTPAGE)
                 } else {
                     updateFeed(item.title as String, TYPE_SUBREDDIT)
                 }

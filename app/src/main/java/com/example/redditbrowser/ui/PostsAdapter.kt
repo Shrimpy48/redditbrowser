@@ -8,10 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
-import com.example.redditbrowser.ui.viewholders.ImagePostViewHolder
-import com.example.redditbrowser.ui.viewholders.TextPostViewHolder
-import com.example.redditbrowser.ui.viewholders.UrlPostViewHolder
-import com.example.redditbrowser.ui.viewholders.VideoPostViewHolder
+import com.example.redditbrowser.ui.viewholders.*
 import com.example.redditbrowser.web.GlideRequests
 import com.google.android.exoplayer2.upstream.DataSource
 
@@ -40,6 +37,7 @@ class PostsAdapter(
             R.layout.image_post -> (holder as ImagePostViewHolder).bind(getItem(position))
             R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position))
             R.layout.url_post -> (holder as UrlPostViewHolder).bind(getItem(position))
+            R.layout.placeholder_post -> (holder as PlaceholderPostViewHolder).bind()
             else -> throw IllegalArgumentException("unknown view type ${getItemViewType(position)}")
         }
     }
@@ -51,6 +49,7 @@ class PostsAdapter(
             R.layout.image_post -> ImagePostViewHolder.create(parent, context, showNsfw, glide)
             R.layout.video_post -> VideoPostViewHolder.create(parent, context, showNsfw, dataSource)
             R.layout.url_post -> UrlPostViewHolder.create(parent, showNsfw)
+            R.layout.placeholder_post -> PlaceholderPostViewHolder.create(parent)
             else -> throw IllegalArgumentException("unknown view type $viewType")
         }
     }
@@ -81,6 +80,7 @@ class PostsAdapter(
             Post.VIDEO -> R.layout.video_post
             Post.DASH -> R.layout.video_post
             Post.URL -> R.layout.url_post
+            null -> R.layout.placeholder_post
             else -> throw IllegalArgumentException("Invalid post type ${getItem(position)?.type}")
         }
     }

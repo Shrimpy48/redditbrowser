@@ -12,7 +12,6 @@
         <TextView android:id="@+id/fullscreen_text"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:keepScreenOn="true"
-                  android:gravity="center"/>
+                  android:keepScreenOn="true"/>
     </LinearLayout>
 </ScrollView>
