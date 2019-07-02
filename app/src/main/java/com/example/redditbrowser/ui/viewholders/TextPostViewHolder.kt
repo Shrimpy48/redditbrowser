@@ -2,7 +2,6 @@ package com.example.redditbrowser.ui.viewholders
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,7 +29,6 @@ class TextPostViewHolder(cardView: View, private val context: Context, private v
     }
 
     fun bind(post: Post?) {
-        Log.d("TextPost", "Bound ${post?.title}")
         this.post = post
         titleView.text = post?.title ?: "loading"
         subredditView.text = post?.subreddit ?: ""
@@ -39,6 +37,7 @@ class TextPostViewHolder(cardView: View, private val context: Context, private v
         val isNsfw = post?.nsfw ?: false
         if (showNsfw or !isNsfw)
             selftextView.text = post?.selftext ?: ""
+        else selftextView.text = "NSFW"
 
         if (post != null)
             selftextView.setOnClickListener {

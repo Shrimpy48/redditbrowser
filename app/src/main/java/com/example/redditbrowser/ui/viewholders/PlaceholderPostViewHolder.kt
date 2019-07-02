@@ -1,6 +1,5 @@
 package com.example.redditbrowser.ui.viewholders
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,9 +15,5 @@ class PlaceholderPostViewHolder(cardView: View) :
                 .inflate(R.layout.placeholder_post, parent, false)
             return PlaceholderPostViewHolder(view)
         }
-    }
-
-    fun bind() {
-        Log.d("PlaceholderPost", "Bound")
     }
 }

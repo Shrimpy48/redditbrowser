@@ -3,6 +3,7 @@ package com.example.redditbrowser.apis
 import android.util.Log
 import com.example.redditbrowser.apis.responses.GfyAuthRequest
 import com.example.redditbrowser.apis.responses.PostInfo
+import com.example.redditbrowser.apis.responses.SelfInfo
 import com.example.redditbrowser.apis.services.GfyApiService
 import com.example.redditbrowser.apis.services.ImgurApiService
 import com.example.redditbrowser.apis.services.RedditApiService
@@ -234,116 +235,110 @@ object ApiFetcher {
         val width: Int?
         val height: Int?
         val type: Int
-        val post: Post
         if (title == null || subreddit == null || name == null || author == null || isNsfw == null) {
             throw Exception("No data")
         }
-        when {
-            info.isSelf != null && info.isSelf!! -> {
-                val body = info.selftext
-                type = Post.TEXT
-                post = Post(
-                    name,
-                    title,
-                    author,
-                    subreddit,
-                    isNsfw,
-                    type,
-                    selftext = body
-                )
-            }
-            info.domain != null && "imgur" in info.domain!! -> {
-                post = parseImgurImage(name, title, subreddit, author, isNsfw, info.url!!)
-                    ?: (parseImgurAlbum(name, title, subreddit, author, isNsfw, info.url!!)
-                        ?: throw Exception("Could not fetch imgur content"))
-            }
-            info.domain != null && "gfycat" in info.domain!! -> {
-                post = parseGfy(name, title, subreddit, author, isNsfw, info.url!!)
-                    ?: throw Exception("Could not fetch gfy content")
-            }
-            info.postHint == "image" -> {
-                contentUrl = info.url
-                width = info.preview?.images!![0].source?.width
-                height = info.preview?.images!![0].source?.height
-                type = Post.IMAGE
-                post = Post(
-                    name,
-                    title,
-                    author,
-                    subreddit,
-                    isNsfw,
-                    type,
-                    url = contentUrl,
-                    width = width,
-                    height = height
-                )
-            }
-            info.secureMedia != null && info.secureMedia?.redditVideo != null -> {
-                contentUrl = info.secureMedia?.redditVideo?.dashUrl
-                width = info.secureMedia?.redditVideo?.width
-                height = info.secureMedia?.redditVideo?.height
-                type = Post.DASH
-                post = Post(
-                    name,
-                    title,
-                    author,
-                    subreddit,
-                    isNsfw,
-                    type,
-                    url = contentUrl,
-                    width = width,
-                    height = height
-                )
-            }
-            info.media != null && info.media?.redditVideo != null -> {
-                contentUrl = info.media?.redditVideo?.dashUrl
-                width = info.media?.redditVideo?.width
-                height = info.media?.redditVideo?.height
-                type = Post.DASH
-                post = Post(
-                    name,
-                    title,
-                    author,
-                    subreddit,
-                    isNsfw,
-                    type,
-                    url = contentUrl,
-                    width = width,
-                    height = height
-                )
-            }
-            info.preview != null && info.preview?.redditVideoPreview != null -> {
-                contentUrl = info.preview?.redditVideoPreview?.dashUrl
-                width = info.preview?.redditVideoPreview?.width
-                height = info.preview?.redditVideoPreview?.height
-                type = Post.DASH
-                post = Post(
-                    name,
-                    title,
-                    author,
-                    subreddit,
-                    isNsfw,
-                    type,
-                    url = contentUrl,
-                    width = width,
-                    height = height
-                )
-            }
-            else -> {
-                contentUrl = info.url
-                type = Post.URL
-                post = Post(
-                    name,
-                    title,
-                    author,
-                    subreddit,
-                    isNsfw,
-                    type,
-                    url = contentUrl
-                )
-            }
+        if (info.isSelf != null && info.isSelf!!) {
+            val body = info.selftext
+            type = Post.TEXT
+            return Post(
+                name,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                type,
+                selftext = body
+            )
         }
-        return post
+        if (info.domain != null && "imgur" in info.domain!!) {
+            val post = parseImgurImage(name, title, subreddit, author, isNsfw, info.url!!)
+                ?: parseImgurAlbum(name, title, subreddit, author, isNsfw, info.url!!)
+            if (post != null) return post
+        }
+        if (info.domain != null && "gfycat" in info.domain!!) {
+            val post = parseGfy(name, title, subreddit, author, isNsfw, info.url!!)
+            if (post != null) return post
+        }
+        if (info.postHint == "image") {
+            contentUrl = info.url
+            width = info.preview?.images!![0].source?.width
+            height = info.preview?.images!![0].source?.height
+            type = Post.IMAGE
+            return Post(
+                name,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                type,
+                url = contentUrl,
+                width = width,
+                height = height
+            )
+        }
+        if (info.secureMedia != null && info.secureMedia?.redditVideo != null) {
+            contentUrl = info.secureMedia?.redditVideo?.dashUrl
+            width = info.secureMedia?.redditVideo?.width
+            height = info.secureMedia?.redditVideo?.height
+            type = Post.DASH
+            return Post(
+                name,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                type,
+                url = contentUrl,
+                width = width,
+                height = height
+            )
+        }
+        if (info.media != null && info.media?.redditVideo != null) {
+            contentUrl = info.media?.redditVideo?.dashUrl
+            width = info.media?.redditVideo?.width
+            height = info.media?.redditVideo?.height
+            type = Post.DASH
+            return Post(
+                name,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                type,
+                url = contentUrl,
+                width = width,
+                height = height
+            )
+        }
+        if (info.preview != null && info.preview?.redditVideoPreview != null) {
+            contentUrl = info.preview?.redditVideoPreview?.dashUrl
+            width = info.preview?.redditVideoPreview?.width
+            height = info.preview?.redditVideoPreview?.height
+            type = Post.DASH
+            return Post(
+                name,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                type,
+                url = contentUrl,
+                width = width,
+                height = height
+            )
+        }
+        contentUrl = info.url
+        type = Post.URL
+        return Post(
+            name,
+            title,
+            author,
+            subreddit,
+            isNsfw,
+            type,
+            url = contentUrl
+        )
     }
 
     private suspend fun getMyFrontPagePosts(): List<Post> {
@@ -530,6 +525,17 @@ object ApiFetcher {
         return names
     }
 
+    suspend fun getMyInfo(): SelfInfo {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
+        }
+        val res = reddit!!.getMyInfo()
+        if (!res.isSuccessful) throw Exception("Unable to fetch info")
+        return res.body()!!
+    }
+
     suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
         map { async { f(it) } }.map { it.await() }
     }
@@ -695,6 +701,18 @@ object ApiFetcher {
         CoroutineScope(Dispatchers.Main).launch {
             val res: List<String>? = try {
                 getMySubscribedSubreddits()
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
+    fun getMyInfo(listener: Listener<SelfInfo>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res: SelfInfo? = try {
+                getMyInfo()
             } catch (t: Throwable) {
                 listener.onFailure(t)
                 null

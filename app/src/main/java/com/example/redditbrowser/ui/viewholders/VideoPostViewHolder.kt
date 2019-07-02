@@ -3,7 +3,6 @@ package com.example.redditbrowser.ui.viewholders
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +25,7 @@ class VideoPostViewHolder(
     cardView: View,
     private val context: Context,
     private val showNsfw: Boolean,
+    private val autoPlay: Boolean,
     private val dataSourceFactory: DataSource.Factory
 ) :
     RecyclerView.ViewHolder(cardView) {
@@ -33,7 +33,7 @@ class VideoPostViewHolder(
     private val subredditView = cardView.subredditView
     private val authorView = cardView.authorView
     private val videoView = cardView.videoView
-    private val clickableFrame = cardView.clickableFrame
+    private val mediaLayout = cardView.mediaLayout
 
     private var player: SimpleExoPlayer? = null
     private var mediaSource: MediaSource? = null
@@ -45,16 +45,16 @@ class VideoPostViewHolder(
             parent: ViewGroup,
             context: Context,
             showNsfw: Boolean,
+            autoPlay: Boolean,
             factory: DataSource.Factory
         ): VideoPostViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.video_post, parent, false)
-            return VideoPostViewHolder(view, context, showNsfw, factory)
+            return VideoPostViewHolder(view, context, showNsfw, autoPlay, factory)
         }
     }
 
     fun bind(post: Post?) {
-        Log.d("VideoPost", "Bound ${post?.title}")
         this.post = post
         titleView.text = post?.title ?: "loading"
         subredditView.text = post?.subreddit ?: ""
@@ -75,7 +75,7 @@ class VideoPostViewHolder(
                 else ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(Uri.parse(post.url))
             }
 
-            clickableFrame.setOnClickListener {
+            mediaLayout.setOnClickListener {
                 showFullscreen()
             }
         }
@@ -98,7 +98,7 @@ class VideoPostViewHolder(
 
     fun play() {
         if (mediaSource != null) {
-            player?.playWhenReady = true
+            player?.playWhenReady = autoPlay
             player?.prepare(mediaSource)
             player?.volume = 0f
         }
