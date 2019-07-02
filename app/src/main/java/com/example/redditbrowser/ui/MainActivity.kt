@@ -9,8 +9,10 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate.*
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -38,7 +40,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.content_main.*
-import kotlinx.android.synthetic.main.nav_header_main.*
 import okhttp3.Cache
 import kotlin.math.roundToInt
 
@@ -54,8 +55,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private lateinit var model: FeedViewModel
 
-    private var multis: ArrayList<String> = ArrayList()
-    private var subreddits: ArrayList<String> = ArrayList()
+    private var multis: ArrayList<String>? = null
+    private var subreddits: ArrayList<String>? = null
 
     private var username: String = AuthValues.redditUsername
 
@@ -85,13 +86,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
         val cacheSize: Long = 150 * 1024 * 1024
-
         HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
 
+        initTheme()
         model = getViewModel()
         initList()
         initSwipeToRefresh()
-        initHeader(savedInstanceState)
+        initHeader(navView, savedInstanceState)
         initMenu(navView, savedInstanceState)
         val feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         val feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
@@ -217,15 +218,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    private fun initHeader(savedInstanceState: Bundle?) {
+    private fun initHeader(navView: NavigationView, savedInstanceState: Bundle?) {
+        val parent = navView.getHeaderView(0)
+        val view = parent.findViewById<TextView>(R.id.usernameView)
         if (savedInstanceState != null && savedInstanceState.containsKey("username")) {
             username = savedInstanceState.getString("username")!!
-            usernameView.text = username
+            view.text = username
         } else {
             ApiFetcher.getMyInfo(object : ApiFetcher.Listener<SelfInfo> {
                 override fun onComplete(result: SelfInfo) {
                     username = result.name!!
-                    usernameView.text = username
+                    view.text = username
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -247,42 +250,46 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun fetchSubreddits(menu: Menu, savedInstanceState: Bundle?) {
         if (savedInstanceState != null && savedInstanceState.containsKey("subreddits")) {
-            subreddits = savedInstanceState.getStringArrayList("subreddits")!!
-            for (subreddit in subreddits)
-                menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
-        } else {
-            ApiFetcher.getMySubscribedSubreddits(object : ApiFetcher.Listener<List<String>> {
-                override fun onComplete(result: List<String>) {
-                    subreddits = result as ArrayList<String>
-                    for (subreddit in result)
-                        menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
-                }
-
-                override fun onFailure(t: Throwable) {
-                    Log.e("Subreddit fetching", t.localizedMessage)
-                }
-            })
+            subreddits = savedInstanceState.getStringArrayList("subreddits")
+            if (subreddits != null) {
+                for (subreddit in subreddits!!)
+                    menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
+                return
+            }
         }
+        ApiFetcher.getMySubscribedSubreddits(object : ApiFetcher.Listener<List<String>> {
+            override fun onComplete(result: List<String>) {
+                subreddits = result as ArrayList<String>
+                for (subreddit in result)
+                    menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
+            }
+
+            override fun onFailure(t: Throwable) {
+                Log.e("Subreddit fetching", t.localizedMessage)
+            }
+        })
     }
 
     private fun fetchMultis(menu: Menu, savedInstanceState: Bundle?) {
         if (savedInstanceState != null && savedInstanceState.containsKey("multis")) {
-            multis = savedInstanceState.getStringArrayList("multis")!!
-            for (multi in multis)
-                menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
-        } else {
-            ApiFetcher.getMyMultis(object : ApiFetcher.Listener<List<String>> {
-                override fun onComplete(result: List<String>) {
-                    multis = result as ArrayList<String>
-                    for (multi in result)
-                        menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
-                }
-
-                override fun onFailure(t: Throwable) {
-                    Log.e("Multi fetching", t.localizedMessage)
-                }
-            })
+            multis = savedInstanceState.getStringArrayList("multis")
+            if (multis != null) {
+                for (multi in multis!!)
+                    menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
+                return
+            }
         }
+        ApiFetcher.getMyMultis(object : ApiFetcher.Listener<List<String>> {
+            override fun onComplete(result: List<String>) {
+                multis = result as ArrayList<String>
+                for (multi in result)
+                    menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
+            }
+
+            override fun onFailure(t: Throwable) {
+                Log.e("Multi fetching", t.localizedMessage)
+            }
+        })
     }
 
     private fun updateFeed(feed: String, feedType: Int) {
@@ -298,5 +305,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             setClass(activity, SettingsActivity::class.java)
         }
         startActivity(intent)
+    }
+
+    private fun initTheme() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        when (prefs.getString("themeMode", "2")) {
+            "0" -> setDefaultNightMode(MODE_NIGHT_NO)
+            "1" -> setDefaultNightMode(MODE_NIGHT_YES)
+            "2" -> setDefaultNightMode(MODE_NIGHT_FOLLOW_SYSTEM)
+            "3" -> setDefaultNightMode(MODE_NIGHT_AUTO_BATTERY)
+        }
     }
 }

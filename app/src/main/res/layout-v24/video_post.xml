@@ -57,7 +57,8 @@
                     android:layout_height="wrap_content" app:srcCompat="@drawable/ic_gif_white_24dp"
                     android:id="@+id/typeView" app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" android:adjustViewBounds="true"
-                    android:layout_gravity="top" tools:ignore="ContentDescription"/>
+                    android:layout_gravity="top" tools:ignore="ContentDescription"
+                    android:tint="@color/design_default_color_secondary"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>
