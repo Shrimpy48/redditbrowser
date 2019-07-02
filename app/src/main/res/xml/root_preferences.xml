@@ -18,6 +18,17 @@
         xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
+            app:title="@string/app_header">
+
+        <ListPreference
+                app:key="themeMode"
+                app:title="@string/theme_mode_title"
+                app:entries="@array/themeNames"
+                app:entryValues="@array/themeValues"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
             app:title="@string/feed_header">
 
         <EditTextPreference
