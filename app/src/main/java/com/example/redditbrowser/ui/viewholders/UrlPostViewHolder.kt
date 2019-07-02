@@ -1,6 +1,5 @@
 package com.example.redditbrowser.ui.viewholders
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,7 +25,6 @@ class UrlPostViewHolder(cardView: View, private val showNsfw: Boolean) : Recycle
     }
 
     fun bind(post: Post?) {
-        Log.d("UrlPost", "Bound ${post?.title}")
         this.post = post
         titleView.text = post?.title ?: "loading"
         subredditView.text = post?.subreddit ?: ""

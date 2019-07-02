@@ -47,6 +47,10 @@
                 app:key="showNsfw"
                 app:title="@string/show_nsfw_title"/>
 
+        <SwitchPreferenceCompat
+                app:key="autoPlay"
+                app:title="@string/auto_play_title"/>
+
     </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

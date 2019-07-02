@@ -41,9 +41,22 @@
                     android:layout_marginEnd="2dp" app:layout_constraintEnd_toStartOf="@+id/subredditView"
                     app:layout_constraintHorizontal_bias="0.0"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
-        <ImageView
+        <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
-                android:id="@+id/imageView" android:adjustViewBounds="true"/>
+                android:layout_height="wrap_content" android:id="@+id/mediaLayout">
+
+            <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
+                    android:id="@+id/imageView" android:adjustViewBounds="true"
+                    app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"/>
+            <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" app:srcCompat="@drawable/ic_image_white_24dp"
+                    android:id="@+id/typeView" app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" android:adjustViewBounds="true"
+                    android:layout_gravity="top" tools:ignore="ContentDescription"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

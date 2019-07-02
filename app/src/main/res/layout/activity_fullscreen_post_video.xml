@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
-             android:layout_height="match_parent"
+             android:layout_height="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
              tools:context=".ui.FullscreenPostActivity">
 
     <!-- The primary full-screen view. This can be replaced with whatever view
@@ -12,7 +12,9 @@
                                                  android:layout_width="match_parent"
                                                  android:layout_height="match_parent"
                                                  android:keepScreenOn="true"
-                                                 android:gravity="center"/>
+                                                 android:gravity="center"
+                                                 app:default_artwork="@drawable/ic_error_black_24dp"
+                                                 app:use_artwork="true"/>
 
     <!--&lt;!&ndash; This FrameLayout insets its children based on system windows using-->
     <!--android:fitsSystemWindows. &ndash;&gt;-->

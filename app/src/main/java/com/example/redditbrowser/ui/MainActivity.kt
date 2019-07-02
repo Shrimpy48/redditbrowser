@@ -20,6 +20,8 @@ import androidx.paging.PagedList
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.redditbrowser.R
 import com.example.redditbrowser.apis.ApiFetcher
+import com.example.redditbrowser.apis.AuthValues
+import com.example.redditbrowser.apis.responses.SelfInfo
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_FRONTPAGE
 import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_MULTIREDDIT
@@ -36,6 +38,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.content_main.*
+import kotlinx.android.synthetic.main.nav_header_main.*
 import okhttp3.Cache
 import kotlin.math.roundToInt
 
@@ -50,6 +53,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private lateinit var model: FeedViewModel
+
+    private var multis: ArrayList<String> = ArrayList()
+    private var subreddits: ArrayList<String> = ArrayList()
+
+    private var username: String = AuthValues.redditUsername
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,7 +91,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         model = getViewModel()
         initList()
         initSwipeToRefresh()
-        initMenu(navView)
+        initHeader(savedInstanceState)
+        initMenu(navView, savedInstanceState)
         val feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         val feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
         model.showFeed(Feed(feed, feedType))
@@ -148,6 +157,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val currentFeed = model.currentFeed()
         outState.putString("feed", currentFeed?.feed)
         outState.putInt("feedType", currentFeed?.feedType!!)
+        outState.putStringArrayList("subreddits", subreddits)
+        outState.putStringArrayList("multis", multis)
+        outState.putString("username", username)
     }
 
     private fun getViewModel(): FeedViewModel {
@@ -166,10 +178,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
 
         val showNsfw = prefs.getBoolean("showNsfw", false)
+        val autoPlay = prefs.getBoolean("autoPlay", false)
 
-        Log.d("Settings", "showNsfw: $showNsfw")
-
-        val adapter = PostsAdapter(this, showNsfw, glide, dataSource)
+        val adapter = PostsAdapter(this, showNsfw, autoPlay, glide, dataSource)
         list.adapter = adapter
         model.posts.observe(this, Observer<PagedList<Post>> {
             adapter.submitList(it)
@@ -206,40 +217,72 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    private fun initMenu(navView: NavigationView) {
+    private fun initHeader(savedInstanceState: Bundle?) {
+        if (savedInstanceState != null && savedInstanceState.containsKey("username")) {
+            username = savedInstanceState.getString("username")!!
+            usernameView.text = username
+        } else {
+            ApiFetcher.getMyInfo(object : ApiFetcher.Listener<SelfInfo> {
+                override fun onComplete(result: SelfInfo) {
+                    username = result.name!!
+                    usernameView.text = username
+                }
+
+                override fun onFailure(t: Throwable) {
+                    Log.e("Header populating", t.localizedMessage)
+                }
+            })
+        }
+    }
+
+    private fun initMenu(navView: NavigationView, savedInstanceState: Bundle?) {
         val menu = navView.menu
-        fetchMultis(menu)
-        fetchSubreddits(menu)
+        fetchMultis(menu, savedInstanceState)
+        fetchSubreddits(menu, savedInstanceState)
 
         when (DEFAULT_FEED_TYPE) {
             TYPE_FRONTPAGE -> navView.setCheckedItem(R.id.nav_frontpage)
         }
     }
 
-    private fun fetchSubreddits(menu: Menu) {
-        ApiFetcher.getMySubscribedSubreddits(object : ApiFetcher.Listener<List<String>> {
-            override fun onComplete(result: List<String>) {
-                for (subreddit in result)
-                    menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
-            }
+    private fun fetchSubreddits(menu: Menu, savedInstanceState: Bundle?) {
+        if (savedInstanceState != null && savedInstanceState.containsKey("subreddits")) {
+            subreddits = savedInstanceState.getStringArrayList("subreddits")!!
+            for (subreddit in subreddits)
+                menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
+        } else {
+            ApiFetcher.getMySubscribedSubreddits(object : ApiFetcher.Listener<List<String>> {
+                override fun onComplete(result: List<String>) {
+                    subreddits = result as ArrayList<String>
+                    for (subreddit in result)
+                        menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
+                }
 
-            override fun onFailure(t: Throwable) {
-                Log.e("Subreddit fetching", t.localizedMessage)
-            }
-        })
+                override fun onFailure(t: Throwable) {
+                    Log.e("Subreddit fetching", t.localizedMessage)
+                }
+            })
+        }
     }
 
-    private fun fetchMultis(menu: Menu) {
-        ApiFetcher.getMyMultis(object : ApiFetcher.Listener<List<String>> {
-            override fun onComplete(result: List<String>) {
-                for (multi in result)
-                    menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
-            }
+    private fun fetchMultis(menu: Menu, savedInstanceState: Bundle?) {
+        if (savedInstanceState != null && savedInstanceState.containsKey("multis")) {
+            multis = savedInstanceState.getStringArrayList("multis")!!
+            for (multi in multis)
+                menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
+        } else {
+            ApiFetcher.getMyMultis(object : ApiFetcher.Listener<List<String>> {
+                override fun onComplete(result: List<String>) {
+                    multis = result as ArrayList<String>
+                    for (multi in result)
+                        menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
+                }
 
-            override fun onFailure(t: Throwable) {
-                Log.e("Multi fetching", t.localizedMessage)
-            }
-        })
+                override fun onFailure(t: Throwable) {
+                    Log.e("Multi fetching", t.localizedMessage)
+                }
+            })
+        }
     }
 
     private fun updateFeed(feed: String, feedType: Int) {

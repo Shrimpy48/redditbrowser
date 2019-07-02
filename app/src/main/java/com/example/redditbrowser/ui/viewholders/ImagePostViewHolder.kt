@@ -2,7 +2,6 @@ package com.example.redditbrowser.ui.viewholders
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,7 +35,6 @@ class ImagePostViewHolder(
     }
 
     fun bind(post: Post?) {
-        Log.d("ImagePost", "Bound ${post?.title}")
         this.post = post
         titleView.text = post?.title ?: "loading"
         subredditView.text = post?.subreddit ?: ""
@@ -45,10 +43,11 @@ class ImagePostViewHolder(
         val isNsfw = post?.nsfw ?: false
         if (showNsfw or !isNsfw)
             glide.load(post?.url)
-                .placeholder(R.drawable.ic_image_placeholder)
+                .placeholder(R.drawable.ic_image_black_24dp)
+                .error(R.drawable.ic_error_black_24dp)
                 .into(imageView)
         else
-            glide.load(R.drawable.ic_image_placeholder)
+            glide.load(R.drawable.ic_warning_black_24dp)
                 .into(imageView)
         if (post != null)
             imageView.setOnClickListener {

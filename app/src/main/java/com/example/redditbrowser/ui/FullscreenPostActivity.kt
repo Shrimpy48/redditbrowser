@@ -93,6 +93,8 @@ class FullscreenPostActivity : AppCompatActivity() {
             Post.IMAGE -> {
                 GlideApp.with(this)
                     .load(intent.getStringExtra("url"))
+                    .placeholder(R.drawable.ic_image_black_24dp)
+                    .error(R.drawable.ic_error_black_24dp)
                     .into(fullscreen_image)
             }
             Post.VIDEO -> {
