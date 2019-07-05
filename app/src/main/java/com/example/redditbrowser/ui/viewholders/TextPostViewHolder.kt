@@ -54,7 +54,7 @@ class TextPostViewHolder(cardView: View, private val context: Context, private v
                 putExtra("subreddit", post!!.subreddit)
                 putExtra("author", post!!.author)
                 putExtra("selftext", post!!.selftext)
-                putExtra("url", post!!.url)
+                putExtra("url", post!!.contentUrl)
             }
             context.startActivity(intent)
         }

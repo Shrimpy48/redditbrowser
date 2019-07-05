@@ -37,15 +37,6 @@ interface RedditApiService {
     suspend fun getMyMultisFull(): Response<List<MultiInfoWrapper>>
 
     @GET("/?raw_json=1")
-    suspend fun getMyFrontPagePosts(): Response<PostInfoListWrapper>
-
-    @GET("/?raw_json=1")
-    suspend fun getMyFrontPagePosts(
-        @Query("after") after: String?,
-        @Query("count") count: Int
-    ): Response<PostInfoListWrapper>
-
-    @GET("/?raw_json=1")
     suspend fun getMyFrontPagePosts(@Query("limit") limit: Int): Response<PostInfoListWrapper>
 
     @GET("/?raw_json=1")
@@ -55,14 +46,26 @@ interface RedditApiService {
         @Query("limit") limit: Int
     ): Response<PostInfoListWrapper>
 
-    @GET("r/{subreddit}?raw_json=1")
-    suspend fun getSubredditPosts(@Path("subreddit") subreddit: String): Response<PostInfoListWrapper>
+    @GET("/{sort}?raw_json=1")
+    suspend fun getMyFrontPagePosts(@Path("sort") sort: String, @Query("limit") limit: Int): Response<PostInfoListWrapper>
 
-    @GET("r/{subreddit}?raw_json=1")
-    suspend fun getSubredditPosts(
-        @Path("subreddit") subreddit: String,
+    @GET("/{sort}?raw_json=1")
+    suspend fun getMyFrontPagePosts(
+        @Path("sort") sort: String,
         @Query("after") after: String?,
-        @Query("count") count: Int
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
+    ): Response<PostInfoListWrapper>
+
+    @GET("/{sort}?raw_json=1")
+    suspend fun getMyFrontPagePosts(@Path("sort") sort: String, @Query("t") period: String, @Query("limit") limit: Int): Response<PostInfoListWrapper>
+
+    @GET("/{sort}?raw_json=1")
+    suspend fun getMyFrontPagePosts(
+        @Path("sort") sort: String, @Query("t") period: String,
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
     ): Response<PostInfoListWrapper>
 
     @GET("r/{subreddit}?raw_json=1")
@@ -76,14 +79,30 @@ interface RedditApiService {
         @Query("limit") limit: Int
     ): Response<PostInfoListWrapper>
 
-    @GET("me/m/{multi}?raw_json=1")
-    suspend fun getMyMultiPosts(@Path("multi") multi: String): Response<PostInfoListWrapper>
+    @GET("r/{subreddit}/{sort}?raw_json=1")
+    suspend fun getSubredditPosts(@Path("subreddit") subreddit: String, @Path("sort") sort: String, @Query("limit") limit: Int): Response<PostInfoListWrapper>
 
-    @GET("me/m/{multi}?raw_json=1")
-    suspend fun getMyMultiPosts(
-        @Path("multi") multi: String,
+    @GET("r/{subreddit}/{sort}?raw_json=1")
+    suspend fun getSubredditPosts(
+        @Path("subreddit") subreddit: String, @Path("sort") sort: String,
         @Query("after") after: String?,
-        @Query("count") count: Int
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
+    ): Response<PostInfoListWrapper>
+
+    @GET("r/{subreddit}/{sort}?raw_json=1")
+    suspend fun getSubredditPosts(
+        @Path("subreddit") subreddit: String, @Path("sort") sort: String, @Query("t") period: String, @Query(
+            "limit"
+        ) limit: Int
+    ): Response<PostInfoListWrapper>
+
+    @GET("r/{subreddit}/{sort}?raw_json=1")
+    suspend fun getSubredditPosts(
+        @Path("subreddit") subreddit: String, @Path("sort") sort: String, @Query("t") period: String,
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
     ): Response<PostInfoListWrapper>
 
     @GET("me/m/{multi}?raw_json=1")
@@ -92,6 +111,32 @@ interface RedditApiService {
     @GET("me/m/{multi}?raw_json=1")
     suspend fun getMyMultiPosts(
         @Path("multi") multi: String,
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
+    ): Response<PostInfoListWrapper>
+
+    @GET("me/m/{multi}/{sort}?raw_json=1")
+    suspend fun getMyMultiPosts(@Path("multi") multi: String, @Path("sort") sort: String, @Query("limit") limit: Int): Response<PostInfoListWrapper>
+
+    @GET("me/m/{multi}/{sort}?raw_json=1")
+    suspend fun getMyMultiPosts(
+        @Path("multi") multi: String, @Path("sort") sort: String,
+        @Query("after") after: String?,
+        @Query("count") count: Int,
+        @Query("limit") limit: Int
+    ): Response<PostInfoListWrapper>
+
+    @GET("me/m/{multi}/{sort}?raw_json=1")
+    suspend fun getMyMultiPosts(
+        @Path("multi") multi: String, @Path("sort") sort: String, @Query("t") period: String, @Query(
+            "limit"
+        ) limit: Int
+    ): Response<PostInfoListWrapper>
+
+    @GET("me/m/{multi}/{sort}?raw_json=1")
+    suspend fun getMyMultiPosts(
+        @Path("multi") multi: String, @Path("sort") sort: String, @Query("t") period: String,
         @Query("after") after: String?,
         @Query("count") count: Int,
         @Query("limit") limit: Int

@@ -45,4 +45,17 @@
     <string name="follow_system">Follow system setting</string>
     <string name="app_header">Application Settings</string>
     <string name="theme_mode_title">Theme</string>
+    <string name="sort_default">Default</string>
+    <string name="hot">Hot</string>
+    <string name="sort_new">New</string>
+    <string name="controversial">Controversial</string>
+    <string name="top">Top</string>
+    <string name="rising">Rising</string>
+    <string name="hour">Past hour</string>
+    <string name="day">Past 24 hours</string>
+    <string name="week">Past week</string>
+    <string name="month">Past month</string>
+    <string name="year">Past year</string>
+    <string name="period_all">All time</string>
+    <string name="period_default">Default</string>
 </resources>
