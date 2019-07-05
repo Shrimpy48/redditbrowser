@@ -42,7 +42,7 @@ class ImagePostViewHolder(
 
         val isNsfw = post?.nsfw ?: false
         if (showNsfw or !isNsfw)
-            glide.load(post?.url)
+            glide.load(post?.contentUrl)
                 .placeholder(R.drawable.ic_image_black_24dp)
                 .error(R.drawable.ic_error_black_24dp)
                 .into(imageView)
@@ -64,7 +64,7 @@ class ImagePostViewHolder(
                 putExtra("subreddit", post!!.subreddit)
                 putExtra("author", post!!.author)
                 putExtra("selftext", post!!.selftext)
-                putExtra("url", post!!.url)
+                putExtra("url", post!!.contentUrl)
             }
             context.startActivity(intent)
         }

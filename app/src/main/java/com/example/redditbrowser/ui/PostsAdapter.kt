@@ -35,6 +35,7 @@ class PostsAdapter(
             R.layout.text_post -> (holder as TextPostViewHolder).bind(getItem(position))
             R.layout.image_post -> (holder as ImagePostViewHolder).bind(getItem(position))
             R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position))
+            R.layout.embed_post -> (holder as EmbedPostViewHolder).bind(getItem(position))
             R.layout.url_post -> (holder as UrlPostViewHolder).bind(getItem(position))
             R.layout.placeholder_post -> {
             }
@@ -47,6 +48,7 @@ class PostsAdapter(
             R.layout.text_post -> TextPostViewHolder.create(parent, context, showNsfw)
             R.layout.image_post -> ImagePostViewHolder.create(parent, context, showNsfw, glide)
             R.layout.video_post -> VideoPostViewHolder.create(parent, context, showNsfw, autoPlay, dataSource)
+            R.layout.embed_post -> EmbedPostViewHolder.create(parent, context, showNsfw)
             R.layout.url_post -> UrlPostViewHolder.create(parent, showNsfw)
             R.layout.placeholder_post -> PlaceholderPostViewHolder.create(parent)
             else -> throw IllegalArgumentException("unknown view type $viewType")
@@ -75,6 +77,7 @@ class PostsAdapter(
             Post.IMAGE -> R.layout.image_post
             Post.VIDEO -> R.layout.video_post
             Post.DASH -> R.layout.video_post
+            Post.EMBED -> R.layout.embed_post
             Post.URL -> R.layout.url_post
             null -> R.layout.placeholder_post
             else -> throw IllegalArgumentException("Invalid post type ${getItem(position)?.type}")

@@ -26,6 +26,8 @@ class PostRepository(
             db.posts().insert(res.map { post ->
                 post.feed = feed.feed
                 post.feedType = feed.feedType
+                post.sort = feed.sort
+                post.period = feed.period
                 post
             })
         }
@@ -35,11 +37,11 @@ class PostRepository(
     private fun refresh(feed: Feed): LiveData<NetworkState> {
         val networkState = MutableLiveData<NetworkState>()
         networkState.value = NetworkState.LOADING
-        ApiFetcher.getFeedPosts(feed, object : ApiFetcher.Listener<List<Post>> {
+        ApiFetcher.getFeedPosts(feed, networkPageSize, object : ApiFetcher.Listener<List<Post>> {
             override fun onComplete(result: List<Post>) {
                 executor.execute {
                     db.runInTransaction {
-                        db.posts().deleteByFeed(feed.feed, feed.feedType)
+                        db.posts().deleteByFeed(feed.feed, feed.feedType, feed.sort, feed.period)
                         insertResultIntoDb(feed, result)
                     }
 
@@ -48,7 +50,8 @@ class PostRepository(
             }
 
             override fun onFailure(t: Throwable) {
-                Log.e("Refresh", t.localizedMessage)
+                Log.e("Refresh", "" + t.localizedMessage)
+                networkState.postValue(NetworkState.FAILED)
             }
         })
         return networkState
@@ -62,7 +65,7 @@ class PostRepository(
             refresh(feed)
         }
 
-        val livePagedList = db.posts().postsByFeed(feed.feed, feed.feedType).toLiveData(
+        val livePagedList = db.posts().postsByFeed(feed.feed, feed.feedType, feed.sort, feed.period).toLiveData(
             pageSize = pageSize, boundaryCallback = callback
         )
 

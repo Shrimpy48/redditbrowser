@@ -1,36 +1,35 @@
 package com.example.redditbrowser.datastructs
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
 
-@Entity(
-    tableName = "posts",
-    indices = [Index(value = ["feed"], unique = false), Index(value = ["feedType"], unique = false)]
-)
+@Entity(primaryKeys = ["name", "feed", "feedType", "sort", "period"])
 data class Post(
-    @PrimaryKey
     val name: String,
+    val id: String,
     val title: String,
     val author: String,
-    @ColumnInfo(collate = ColumnInfo.NOCASE)
     val subreddit: String,
     val nsfw: Boolean,
+    val spoiler: Boolean,
     val type: Int,
-    val url: String? = null,
+    val score: Int,
+    val contentUrl: String? = null,
+    val postUrl: String? = null,
     val selftext: String? = null,
     val width: Int? = null,
     val height: Int? = null
 ) {
     var feed = ""
     var feedType = -1
+    var sort: String = ""
+    var period: String = ""
 
     companion object {
         const val TEXT = 0
         const val IMAGE = 1
         const val VIDEO = 2
         const val DASH = 3
-        const val URL = 4
+        const val EMBED = 4
+        const val URL = 5
     }
 }

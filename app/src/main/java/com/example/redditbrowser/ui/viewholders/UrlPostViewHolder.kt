@@ -30,7 +30,7 @@ class UrlPostViewHolder(cardView: View, private val showNsfw: Boolean) : Recycle
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 
-        urlView.text = post?.url ?: ""
+        urlView.text = post?.postUrl ?: ""
     }
 }
 

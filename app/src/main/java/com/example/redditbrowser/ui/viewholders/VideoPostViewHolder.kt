@@ -71,8 +71,8 @@ class VideoPostViewHolder(
                 mediaSource = if (post.type == Post.DASH) DashMediaSource.Factory(
                     DefaultDashChunkSource.Factory(dataSourceFactory),
                     dataSourceFactory
-                ).createMediaSource(Uri.parse(post.url))
-                else ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(Uri.parse(post.url))
+                ).createMediaSource(Uri.parse(post.contentUrl))
+                else ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(Uri.parse(post.contentUrl))
             }
 
             mediaLayout.setOnClickListener {
@@ -90,7 +90,7 @@ class VideoPostViewHolder(
                 putExtra("subreddit", post!!.subreddit)
                 putExtra("author", post!!.author)
                 putExtra("selftext", post!!.selftext)
-                putExtra("url", post!!.url)
+                putExtra("url", post!!.contentUrl)
             }
             context.startActivity(intent)
         }

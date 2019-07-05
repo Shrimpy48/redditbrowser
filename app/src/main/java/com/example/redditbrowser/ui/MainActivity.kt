@@ -9,6 +9,10 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -36,18 +40,19 @@ import com.example.redditbrowser.web.HttpClientBuilder
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.util.Util
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.content_main.*
 import okhttp3.Cache
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
+    AdapterView.OnItemSelectedListener {
 
     companion object {
         const val DEFAULT_FEED = ""
         const val DEFAULT_FEED_TYPE = TYPE_FRONTPAGE
+        const val DEFAULT_SORT = ""
+        const val DEFAULT_PERIOD = ""
         const val DEFAULT_COLS_LANDSCAPE = 3
         const val DEFAULT_COLS_PORTRAIT = 1
         const val DEFAULT_SPACING = 8f
@@ -55,10 +60,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private lateinit var model: FeedViewModel
 
+    private lateinit var sortSpinner: Spinner
+    private lateinit var periodSpinner: Spinner
+
     private var multis: ArrayList<String>? = null
     private var subreddits: ArrayList<String>? = null
 
     private var username: String = AuthValues.redditUsername
+
+    private var feed = DEFAULT_FEED
+    private var feedType = DEFAULT_FEED_TYPE
+    private var sort: String = DEFAULT_SORT
+    private var period: String = DEFAULT_PERIOD
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,11 +80,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        val fab: FloatingActionButton = findViewById(R.id.fab)
-        fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
-        }
+//        val fab: FloatingActionButton = findViewById(R.id.fab)
+//        fab.setOnClickListener { view ->
+//            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                .setAction("Action", null).show()
+//        }
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
         val toggle = ActionBarDrawerToggle(
@@ -84,6 +97,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         navView.setNavigationItemSelectedListener(this)
 
+        sortSpinner = findViewById(R.id.sortSpinner)
+        ArrayAdapter.createFromResource(this, R.array.sorts, android.R.layout.simple_spinner_item)
+            .also { adapter ->
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                sortSpinner.adapter = adapter
+            }
+        sortSpinner.onItemSelectedListener = this
+
+        periodSpinner = findViewById(R.id.periodSpinner)
+        ArrayAdapter.createFromResource(this, R.array.periods, android.R.layout.simple_spinner_item)
+            .also { adapter ->
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                periodSpinner.adapter = adapter
+            }
+        periodSpinner.onItemSelectedListener = this
+
 
         val cacheSize: Long = 150 * 1024 * 1024
         HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
@@ -94,9 +123,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         initSwipeToRefresh()
         initHeader(navView, savedInstanceState)
         initMenu(navView, savedInstanceState)
-        val feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
-        val feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
-        model.showFeed(Feed(feed, feedType))
+        feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
+        feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
+        sort = savedInstanceState?.getString("sort") ?: DEFAULT_SORT
+        period = savedInstanceState?.getString("period") ?: DEFAULT_PERIOD
+        model.showFeed(Feed(feed, feedType, sort, period))
     }
 
     override fun onBackPressed() {
@@ -128,36 +159,94 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        // Handle navigation view item clicks here.
-
         when (item.groupId) {
             R.id.nav_multis -> {
-                updateFeed(item.title as String, TYPE_MULTIREDDIT)
+                feed = item.title as String
+                feedType = TYPE_MULTIREDDIT
             }
 
             R.id.nav_subscribed -> {
-                updateFeed(item.title as String, TYPE_SUBREDDIT)
+                feed = item.title as String
+                feedType = TYPE_SUBREDDIT
             }
 
             else -> {
                 if (item.itemId == R.id.nav_frontpage) {
-                    updateFeed("", TYPE_FRONTPAGE)
+                    feed = ""
+                    feedType = TYPE_FRONTPAGE
                 } else {
-                    updateFeed(item.title as String, TYPE_SUBREDDIT)
+                    feed = item.title as String
+                    feedType = TYPE_SUBREDDIT
                 }
             }
         }
+
+        updateFeed(feed, feedType, sort, period)
 
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
 
+    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+        if (parent?.id == R.id.sortSpinner) {
+            when (position) {
+                0 -> { // default
+                    sort = ""
+                    period = ""
+                    periodSpinner.visibility = View.INVISIBLE
+                }
+                1 -> { // hot
+                    sort = "hot"
+                    period = ""
+                    periodSpinner.visibility = View.INVISIBLE
+                }
+                2 -> { // new
+                    sort = "new"
+                    period = ""
+                    periodSpinner.visibility = View.INVISIBLE
+                }
+                3 -> { // controversial
+                    sort = "controversial"
+                    period = getPeriod(periodSpinner.selectedItemPosition)
+                    periodSpinner.visibility = View.VISIBLE
+                }
+                4 -> { // top
+                    sort = "top"
+                    period = getPeriod(periodSpinner.selectedItemPosition)
+                    periodSpinner.visibility = View.VISIBLE
+                }
+                5 -> { // rising
+                    sort = "rising"
+                    period = ""
+                    periodSpinner.visibility = View.INVISIBLE
+                }
+            }
+        } else {
+            period = getPeriod(periodSpinner.selectedItemPosition)
+        }
+        updateFeed(feed, feedType, sort, period)
+    }
+
+    private fun getPeriod(position: Int) = when (position) {
+        0 -> ""
+        1 -> "hour"
+        2 -> "day"
+        3 -> "week"
+        4 -> "month"
+        5 -> "year"
+        6 -> "all"
+        else -> ""
+    }
+
+    override fun onNothingSelected(parent: AdapterView<*>?) {}
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        val currentFeed = model.currentFeed()
-        outState.putString("feed", currentFeed?.feed)
-        outState.putInt("feedType", currentFeed?.feedType!!)
+        outState.putString("feed", feed)
+        outState.putInt("feedType", feedType)
+        outState.putString("sort", sort)
+        outState.putString("period", period)
         outState.putStringArrayList("subreddits", subreddits)
         outState.putStringArrayList("multis", multis)
         outState.putString("username", username)
@@ -292,8 +381,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         })
     }
 
-    private fun updateFeed(feed: String, feedType: Int) {
-        if (model.showFeed(Feed(feed, feedType))) {
+    private fun updateFeed(feed: String, feedType: Int, sort: String = "", period: String = "") {
+        if (model.showFeed(Feed(feed, feedType, sort, period))) {
 //            list.scrollToPosition(0)  // This causes StaggeredGridLayoutManager to draw views offscreen due to a bug
             (list.adapter as? PostsAdapter)?.submitList(null)
         }
