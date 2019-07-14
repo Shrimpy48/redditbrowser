@@ -46,23 +46,13 @@ class PostsAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             R.layout.text_post -> TextPostViewHolder.create(parent, context, showNsfw)
-            R.layout.image_post -> ImagePostViewHolder.create(parent, context, showNsfw, glide)
+            R.layout.image_post -> ImagePostViewHolder.create(parent, context, showNsfw, autoPlay, glide)
             R.layout.video_post -> VideoPostViewHolder.create(parent, context, showNsfw, autoPlay, dataSource)
-            R.layout.embed_post -> EmbedPostViewHolder.create(parent, context, showNsfw)
+            R.layout.embed_post -> EmbedPostViewHolder.create(parent, showNsfw)
             R.layout.url_post -> UrlPostViewHolder.create(parent, showNsfw)
             R.layout.placeholder_post -> PlaceholderPostViewHolder.create(parent)
             else -> throw IllegalArgumentException("unknown view type $viewType")
         }
-    }
-
-    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-        super.onViewAttachedToWindow(holder)
-        if (holder.itemViewType == R.layout.video_post) (holder as VideoPostViewHolder).play()
-    }
-
-    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        super.onViewDetachedFromWindow(holder)
-        if (holder.itemViewType == R.layout.video_post) (holder as VideoPostViewHolder).pause()
     }
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
@@ -76,8 +66,9 @@ class PostsAdapter(
             Post.TEXT -> R.layout.text_post
             Post.IMAGE -> R.layout.image_post
             Post.VIDEO -> R.layout.video_post
-            Post.DASH -> R.layout.video_post
+            Post.VIDEO_DASH -> R.layout.video_post
             Post.EMBED -> R.layout.embed_post
+            Post.EMBED_HTML -> R.layout.embed_post
             Post.URL -> R.layout.url_post
             null -> R.layout.placeholder_post
             else -> throw IllegalArgumentException("Invalid post type ${getItem(position)?.type}")

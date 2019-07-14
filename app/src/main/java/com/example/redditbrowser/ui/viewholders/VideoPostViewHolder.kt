@@ -6,6 +6,7 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
@@ -14,7 +15,6 @@ import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ExtractorMediaSource
-import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
@@ -36,7 +36,6 @@ class VideoPostViewHolder(
     private val mediaLayout = cardView.mediaLayout
 
     private var player: SimpleExoPlayer? = null
-    private var mediaSource: MediaSource? = null
 
     private var post: Post? = null
 
@@ -67,12 +66,34 @@ class VideoPostViewHolder(
                 videoView.player = player
             }
 
+            showVideo(post)
+        }
+    }
+
+    private fun showVideo(post: Post) {
+        if (videoView.width == 0) {
+            videoView.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    videoView.viewTreeObserver.removeOnPreDrawListener(this)
+                    showVideo(post)
+                    return true // == allow drawing
+                }
+            })
+        } else {
+            if (post.width != null && post.height != null) {
+                val params = videoView.layoutParams
+                params.height = post.height * videoView.width / post.width
+                videoView.layoutParams = params
+            }
             if (showNsfw or !post.nsfw) {
-                mediaSource = if (post.type == Post.DASH) DashMediaSource.Factory(
+                val mediaSource = if (post.type == Post.VIDEO_DASH) DashMediaSource.Factory(
                     DefaultDashChunkSource.Factory(dataSourceFactory),
                     dataSourceFactory
-                ).createMediaSource(Uri.parse(post.contentUrl))
-                else ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(Uri.parse(post.contentUrl))
+                ).createMediaSource(Uri.parse(post.content))
+                else ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(Uri.parse(post.content))
+                player?.volume = 0f
+                player?.playWhenReady = autoPlay
+                player?.prepare(mediaSource)
             }
 
             mediaLayout.setOnClickListener {
@@ -90,22 +111,10 @@ class VideoPostViewHolder(
                 putExtra("subreddit", post!!.subreddit)
                 putExtra("author", post!!.author)
                 putExtra("selftext", post!!.selftext)
-                putExtra("url", post!!.contentUrl)
+                putExtra("url", post!!.content)
             }
             context.startActivity(intent)
         }
-    }
-
-    fun play() {
-        if (mediaSource != null) {
-            player?.playWhenReady = autoPlay
-            player?.prepare(mediaSource)
-            player?.volume = 0f
-        }
-    }
-
-    fun pause() {
-        player?.stop()
     }
 
     fun release() {

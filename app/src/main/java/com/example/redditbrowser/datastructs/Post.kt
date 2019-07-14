@@ -13,7 +13,7 @@ data class Post(
     val spoiler: Boolean,
     val type: Int,
     val score: Int,
-    val contentUrl: String? = null,
+    val content: String? = null,
     val postUrl: String? = null,
     val selftext: String? = null,
     val width: Int? = null,
@@ -28,8 +28,9 @@ data class Post(
         const val TEXT = 0
         const val IMAGE = 1
         const val VIDEO = 2
-        const val DASH = 3
+        const val VIDEO_DASH = 3
         const val EMBED = 4
-        const val URL = 5
+        const val EMBED_HTML = 5
+        const val URL = 6
     }
 }

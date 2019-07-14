@@ -118,7 +118,7 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
                 postUrl = url,
                 width = width,
                 height = height
@@ -183,7 +183,7 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
                 postUrl = url,
                 width = width,
                 height = height
@@ -234,7 +234,7 @@ object ApiFetcher {
             isSpoiler,
             type,
             score,
-            contentUrl = contentUrl,
+            content = contentUrl,
             postUrl = url,
             width = width,
             height = height
@@ -250,10 +250,6 @@ object ApiFetcher {
         val isNsfw = info.over18
         val isSpoiler = info.spoiler
         val score = info.score
-        val contentUrl: String?
-        val width: Int?
-        val height: Int?
-        val type: Int
         if (title == null) {
             throw Exception("Null title")
         }
@@ -280,7 +276,7 @@ object ApiFetcher {
         }
         if (info.isSelf != null && info.isSelf!!) {
             val body = info.selftext
-            type = Post.TEXT
+            val type = Post.TEXT
             return Post(
                 name,
                 id,
@@ -304,10 +300,10 @@ object ApiFetcher {
             if (post != null) return post
         }
         if (info.secureMedia != null && info.secureMedia?.redditVideo != null) {
-            contentUrl = info.secureMedia?.redditVideo?.dashUrl
-            width = info.secureMedia?.redditVideo?.width
-            height = info.secureMedia?.redditVideo?.height
-            type = Post.DASH
+            val contentUrl = info.secureMedia?.redditVideo?.dashUrl
+            val width = info.secureMedia?.redditVideo?.width
+            val height = info.secureMedia?.redditVideo?.height
+            val type = Post.VIDEO_DASH
             return Post(
                 name,
                 id,
@@ -318,17 +314,17 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
                 postUrl = info.url,
                 width = width,
                 height = height
             )
         }
         if (info.media != null && info.media?.redditVideo != null) {
-            contentUrl = info.media?.redditVideo?.dashUrl
-            width = info.media?.redditVideo?.width
-            height = info.media?.redditVideo?.height
-            type = Post.DASH
+            val contentUrl = info.media?.redditVideo?.dashUrl
+            val width = info.media?.redditVideo?.width
+            val height = info.media?.redditVideo?.height
+            val type = Post.VIDEO_DASH
             return Post(
                 name,
                 id,
@@ -339,17 +335,17 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
                 postUrl = info.url,
                 width = width,
                 height = height
             )
         }
         if (info.postHint == "image") {
-            contentUrl = info.url
-            width = info.preview?.images!![0].source?.width
-            height = info.preview?.images!![0].source?.height
-            type = Post.IMAGE
+            val contentUrl = info.url
+            val width = info.preview?.images!![0].source?.width
+            val height = info.preview?.images!![0].source?.height
+            val type = Post.IMAGE
             return Post(
                 name,
                 id,
@@ -360,17 +356,17 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
                 postUrl = info.url,
                 width = width,
                 height = height
             )
         }
         if (info.preview != null && info.preview?.redditVideoPreview != null) {
-            contentUrl = info.preview?.redditVideoPreview?.dashUrl
-            width = info.preview?.redditVideoPreview?.width
-            height = info.preview?.redditVideoPreview?.height
-            type = Post.DASH
+            val contentUrl = info.preview?.redditVideoPreview?.dashUrl
+            val width = info.preview?.redditVideoPreview?.width
+            val height = info.preview?.redditVideoPreview?.height
+            val type = Post.VIDEO_DASH
             return Post(
                 name,
                 id,
@@ -381,17 +377,59 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
+                postUrl = info.url,
+                width = width,
+                height = height
+            )
+        }
+        if (info.secureMediaEmbed != null && info.secureMediaEmbed?.content != null) {
+            val content = info.secureMediaEmbed?.content
+            val width = info.secureMediaEmbed?.width
+            val height = info.secureMediaEmbed?.height
+            val type = Post.EMBED_HTML
+            return Post(
+                name,
+                id,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                isSpoiler,
+                type,
+                score,
+                content = content,
+                postUrl = info.url,
+                width = width,
+                height = height
+            )
+        }
+        if (info.mediaEmbed != null && info.mediaEmbed?.content != null) {
+            val content = info.mediaEmbed?.content
+            val width = info.mediaEmbed?.width
+            val height = info.mediaEmbed?.height
+            val type = Post.EMBED_HTML
+            return Post(
+                name,
+                id,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                isSpoiler,
+                type,
+                score,
+                content = content,
                 postUrl = info.url,
                 width = width,
                 height = height
             )
         }
         if (info.secureMediaEmbed != null && info.secureMediaEmbed?.mediaDomainUrl != null) {
-            contentUrl = info.secureMediaEmbed?.mediaDomainUrl
-            width = info.secureMediaEmbed?.width
-            height = info.secureMediaEmbed?.height
-            type = Post.EMBED
+            val contentUrl = info.secureMediaEmbed?.mediaDomainUrl
+            val width = info.secureMediaEmbed?.width
+            val height = info.secureMediaEmbed?.height
+            val type = Post.EMBED
             return Post(
                 name,
                 id,
@@ -402,17 +440,17 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
                 postUrl = info.url,
                 width = width,
                 height = height
             )
         }
         if (info.mediaEmbed != null && info.mediaEmbed?.mediaDomainUrl != null) {
-            contentUrl = info.mediaEmbed?.mediaDomainUrl
-            width = info.mediaEmbed?.width
-            height = info.mediaEmbed?.height
-            type = Post.EMBED
+            val contentUrl = info.mediaEmbed?.mediaDomainUrl
+            val width = info.mediaEmbed?.width
+            val height = info.mediaEmbed?.height
+            val type = Post.EMBED
             return Post(
                 name,
                 id,
@@ -423,14 +461,14 @@ object ApiFetcher {
                 isSpoiler,
                 type,
                 score,
-                contentUrl = contentUrl,
+                content = contentUrl,
                 postUrl = info.url,
                 width = width,
                 height = height
             )
         }
-        contentUrl = info.url
-        type = Post.URL
+        val contentUrl = info.url
+        val type = Post.URL
         return Post(
             name,
             id,
@@ -441,7 +479,7 @@ object ApiFetcher {
             isSpoiler,
             type,
             score,
-            contentUrl = contentUrl,
+            content = contentUrl,
             postUrl = info.url
         )
     }
