@@ -9,7 +9,7 @@ import com.example.redditbrowser.datastructs.Post
 
 @Database(
     entities = [Post::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class PostDatabase : RoomDatabase() {

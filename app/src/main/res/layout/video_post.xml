@@ -48,7 +48,7 @@
             <com.google.android.exoplayer2.ui.PlayerView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content" android:id="@+id/videoView"
-                    app:surface_type="texture_view" app:resize_mode="fixed_width"
+                    app:surface_type="texture_view"
                     app:use_controller="false"
                     app:default_artwork="@drawable/ic_error_black_24dp"
                     app:use_artwork="true" app:layout_constraintTop_toTopOf="parent"

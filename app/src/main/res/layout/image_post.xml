@@ -48,7 +48,7 @@
             <ImageView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content" tools:srcCompat="@tools:sample/backgrounds/scenic"
-                    android:id="@+id/imageView" android:adjustViewBounds="true"
+                    android:id="@+id/imageView" android:adjustViewBounds="false"
                     app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"/>
             <ImageView

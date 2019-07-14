@@ -47,7 +47,7 @@ class FullscreenPostActivity : AppCompatActivity() {
 //            Post.TEXT -> fullscreen_text.systemUiVisibility = flags
 //            Post.IMAGE -> fullscreen_image.systemUiVisibility = flags
 //            Post.VIDEO -> fullscreen_video.systemUiVisibility = flags
-//            Post.DASH -> fullscreen_video.systemUiVisibility = flags
+//            Post.VIDEO_DASH -> fullscreen_video.systemUiVisibility = flags
 //            else -> throw IllegalArgumentException("Invalid post type")
 //        }
 //    }
@@ -69,7 +69,7 @@ class FullscreenPostActivity : AppCompatActivity() {
             Post.TEXT -> setContentView(R.layout.activity_fullscreen_post_text)
             Post.IMAGE -> setContentView(R.layout.activity_fullscreen_post_image)
             Post.VIDEO -> setContentView(R.layout.activity_fullscreen_post_video)
-            Post.DASH -> setContentView(R.layout.activity_fullscreen_post_video)
+            Post.VIDEO_DASH -> setContentView(R.layout.activity_fullscreen_post_video)
             else -> throw IllegalArgumentException("Invalid post type")
         }
 
@@ -82,7 +82,7 @@ class FullscreenPostActivity : AppCompatActivity() {
 //            Post.TEXT -> fullscreen_text.setOnClickListener { toggle() }
 //            Post.IMAGE -> fullscreen_image.setOnClickListener { toggle() }
 //            Post.VIDEO -> fullscreen_video.setOnClickListener { toggle() }
-//            Post.DASH -> fullscreen_video.setOnClickListener { toggle() }
+//            Post.VIDEO_DASH -> fullscreen_video.setOnClickListener { toggle() }
 //            else -> throw IllegalArgumentException("Invalid post type")
 //        }
 
@@ -110,7 +110,7 @@ class FullscreenPostActivity : AppCompatActivity() {
                     .createMediaSource(Uri.parse(intent.getStringExtra("url")))
                 player!!.prepare(mediaSource)
             }
-            Post.DASH -> {
+            Post.VIDEO_DASH -> {
                 player = ExoPlayerFactory.newSimpleInstance(this, DefaultTrackSelector())
                 fullscreen_video.player = player
                 player!!.playWhenReady = true
@@ -148,7 +148,7 @@ class FullscreenPostActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (type == Post.VIDEO || type == Post.DASH) {
+        if (type == Post.VIDEO || type == Post.VIDEO_DASH) {
             if (player != null) player!!.release()
         }
     }
@@ -180,7 +180,7 @@ class FullscreenPostActivity : AppCompatActivity() {
 //            Post.TEXT -> fullscreen_text.systemUiVisibility = flags
 //            Post.IMAGE -> fullscreen_image.systemUiVisibility = flags
 //            Post.VIDEO -> fullscreen_video.systemUiVisibility = flags
-//            Post.DASH -> fullscreen_video.systemUiVisibility = flags
+//            Post.VIDEO_DASH -> fullscreen_video.systemUiVisibility = flags
 //            else -> throw IllegalArgumentException("Invalid post type")
 //        }
 //        mVisible = true

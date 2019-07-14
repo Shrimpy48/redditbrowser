@@ -16,8 +16,8 @@ object HttpClientBuilder {
 
     private var builder = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
-        .callTimeout(5, TimeUnit.SECONDS)
-        .connectTimeout(10, TimeUnit.SECONDS)
+        .callTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .writeTimeout(15, TimeUnit.SECONDS)
 
