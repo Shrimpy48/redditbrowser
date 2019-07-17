@@ -362,6 +362,12 @@ object ApiFetcher {
                 height = height
             )
         }
+        if (info.crosspostParentList != null) {
+            for (parent in info.crosspostParentList!!) {
+                val parsed = parsePost(parent)
+                if (parsed.type != Post.URL) return parsed
+            }
+        }
         if (info.preview != null && info.preview?.redditVideoPreview != null) {
             val contentUrl = info.preview?.redditVideoPreview?.dashUrl
             val width = info.preview?.redditVideoPreview?.width
@@ -467,6 +473,7 @@ object ApiFetcher {
                 height = height
             )
         }
+        Log.d("Parser", "no media found for ${info.name}")
         val contentUrl = info.url
         val type = Post.URL
         return Post(

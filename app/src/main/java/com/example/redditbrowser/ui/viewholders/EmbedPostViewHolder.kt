@@ -3,6 +3,7 @@ package com.example.redditbrowser.ui.viewholders
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
@@ -34,14 +35,34 @@ class EmbedPostViewHolder(
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 
-        if (post != null && (showNsfw || !post.nsfw)) {
-            embedView.settings.javaScriptEnabled = true
-            embedView.settings.useWideViewPort = true
-            embedView.settings.loadWithOverviewMode = true
-            if (post.type == Post.EMBED)
-                embedView.loadUrl(post.content)
-            else if (post.type == Post.EMBED_HTML)
-                embedView.loadData(post.content, "text/html", null)
+        if (post != null) showEmbed(post)
+    }
+
+    private fun showEmbed(post: Post) {
+        if (embedView.width == 0) {
+            embedView.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    embedView.viewTreeObserver.removeOnPreDrawListener(this)
+                    showEmbed(post)
+                    return true // == allow drawing
+                }
+            })
+        } else {
+            if (post.width != null && post.height != null) {
+                val params = embedView.layoutParams
+                params.height = post.height * embedView.width / post.width
+                embedView.layoutParams = params
+            }
+
+            if (showNsfw || !post.nsfw) {
+                embedView.settings.javaScriptEnabled = true
+                embedView.settings.useWideViewPort = true
+                embedView.settings.loadWithOverviewMode = true
+                if (post.type == Post.EMBED)
+                    embedView.loadUrl(post.content)
+                else if (post.type == Post.EMBED_HTML)
+                    embedView.loadData(post.content, "text/html", null)
+            }
         }
     }
 }
