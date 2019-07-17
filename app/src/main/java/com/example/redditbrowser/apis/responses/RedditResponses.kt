@@ -515,6 +515,9 @@ class PostInfo {
     @SerializedName("mod_note")
     @Expose
     var modNote: String? = null
+    @SerializedName("crosspost_parent_list")
+    @Expose
+    var crosspostParentList: List<PostInfo>? = null
     @SerializedName("created")
     @Expose
     var created: Double? = null
@@ -533,6 +536,9 @@ class PostInfo {
     @SerializedName("domain")
     @Expose
     var domain: String? = null
+    @SerializedName("allow_live_comments")
+    @Expose
+    var allowLiveComments: Boolean? = null
     @SerializedName("selftext_html")
     @Expose
     var selftextHtml: String? = null
@@ -641,6 +647,9 @@ class PostInfo {
     @SerializedName("author_patreon_flair")
     @Expose
     var authorPatreonFlair: Boolean? = null
+    @SerializedName("crosspost_parent")
+    @Expose
+    var crosspostParent: String? = null
     @SerializedName("author_flair_text_color")
     @Expose
     var authorFlairTextColor: String? = null
@@ -662,6 +671,9 @@ class PostInfo {
     @SerializedName("created_utc")
     @Expose
     var createdUtc: Double? = null
+    @SerializedName("discussion_type")
+    @Expose
+    var discussionType: String? = null
     @SerializedName("media")
     @Expose
     var media: Media? = null
