@@ -55,7 +55,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" app:srcCompat="@drawable/ic_image_white_24dp"
                     android:id="@+id/typeView" app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" android:adjustViewBounds="true"
+                    app:layout_constraintEnd_toEndOf="parent" android:adjustViewBounds="true"
                     android:layout_gravity="top" tools:ignore="ContentDescription"
                     android:tint="@color/design_default_color_secondary"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
