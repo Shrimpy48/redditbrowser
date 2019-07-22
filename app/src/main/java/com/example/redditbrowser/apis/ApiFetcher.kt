@@ -491,7 +491,7 @@ object ApiFetcher {
         )
     }
 
-    private suspend fun getMyFrontPagePosts(sort: String, period: String, limit: Int): List<Post> {
+    suspend fun getMyFrontPagePosts(sort: String, period: String, limit: Int): Page<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -503,16 +503,20 @@ object ApiFetcher {
         } else reddit!!.getMyFrontPagePosts(limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch front page")
         val posts = res.body()?.data?.children!!
-        return posts.pmap { info -> parsePost(info.data!!) }
+        val processed = posts.pmap { info -> parsePost(info.data!!) }
+        val before = res.body()?.data?.before
+        val after = res.body()?.data?.after
+        val count = res.body()?.data?.dist!!
+        return Page(processed, before, after, count)
     }
 
-    private suspend fun getMyFrontPagePosts(
+    suspend fun getMyFrontPagePosts(
         sort: String,
         period: String,
         after: String?,
         count: Int,
         limit: Int
-    ): List<Post> {
+    ): Page<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -524,10 +528,14 @@ object ApiFetcher {
         } else reddit!!.getMyFrontPagePosts(after, count, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch front page")
         val posts = res.body()?.data?.children!!
-        return posts.pmap { info -> parsePost(info.data!!) }
+        val processed = posts.pmap { info -> parsePost(info.data!!) }
+        val before = res.body()?.data?.before
+        val newAfter = res.body()?.data?.after
+        val newCount = count + res.body()?.data?.dist!!
+        return Page(processed, before, newAfter, newCount)
     }
 
-    private suspend fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int): List<Post> {
+    suspend fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int): Page<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -539,17 +547,21 @@ object ApiFetcher {
         } else reddit!!.getMyMultiPosts(name, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
         val posts = res.body()?.data?.children!!
-        return posts.pmap { info -> parsePost(info.data!!) }
+        val processed = posts.pmap { info -> parsePost(info.data!!) }
+        val before = res.body()?.data?.before
+        val after = res.body()?.data?.after
+        val count = res.body()?.data?.dist!!
+        return Page(processed, before, after, count)
     }
 
-    private suspend fun getMyMultiPosts(
+    suspend fun getMyMultiPosts(
         name: String,
         sort: String,
         period: String,
         after: String?,
         count: Int,
         limit: Int
-    ): List<Post> {
+    ): Page<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -561,10 +573,14 @@ object ApiFetcher {
         } else reddit!!.getMyMultiPosts(name, after, count, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch multi $name")
         val posts = res.body()?.data?.children!!
-        return posts.pmap { info -> parsePost(info.data!!) }
+        val processed = posts.pmap { info -> parsePost(info.data!!) }
+        val before = res.body()?.data?.before
+        val newAfter = res.body()?.data?.after
+        val newCount = count + res.body()?.data?.dist!!
+        return Page(processed, before, newAfter, newCount)
     }
 
-    private suspend fun getSubredditPosts(name: String, sort: String, period: String, limit: Int): List<Post> {
+    suspend fun getSubredditPosts(name: String, sort: String, period: String, limit: Int): Page<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -576,17 +592,21 @@ object ApiFetcher {
         } else reddit!!.getSubredditPosts(name, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
         val posts = res.body()?.data?.children!!
-        return posts.pmap { info -> parsePost(info.data!!) }
+        val processed = posts.pmap { info -> parsePost(info.data!!) }
+        val before = res.body()?.data?.before
+        val after = res.body()?.data?.after
+        val count = res.body()?.data?.dist!!
+        return Page(processed, before, after, count)
     }
 
-    private suspend fun getSubredditPosts(
+    suspend fun getSubredditPosts(
         name: String,
         sort: String,
         period: String,
         after: String?,
         count: Int,
         limit: Int
-    ): List<Post> {
+    ): Page<Post> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -598,10 +618,14 @@ object ApiFetcher {
         } else reddit!!.getSubredditPosts(name, after, count, limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddit $name")
         val posts = res.body()?.data?.children!!
-        return posts.pmap { info -> parsePost(info.data!!) }
+        val processed = posts.pmap { info -> parsePost(info.data!!) }
+        val before = res.body()?.data?.before
+        val newAfter = res.body()?.data?.after
+        val newCount = count + res.body()?.data?.dist!!
+        return Page(processed, before, newAfter, newCount)
     }
 
-    private suspend fun getMyMultis(): List<String> {
+    suspend fun getMyMultis(): List<String> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -613,32 +637,36 @@ object ApiFetcher {
         return multis.map { info -> info.data?.displayName!! }
     }
 
-    private suspend fun getMySubscribedSubreddits(): List<String> {
+    suspend fun getMySubscribedSubreddits(limit: Int): Page<String> {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
             reddit = ServiceGenerator.getRedditService(token)
         }
-        var res = reddit!!.getMySubscribedSubreddits(100)
+        val res = reddit!!.getMySubscribedSubreddits(limit)
         if (!res.isSuccessful) throw Exception("Unable to fetch subreddits")
-        val names = ArrayList<String>()
-        var subreddits = res.body()?.data?.children!!
-        for (subreddit in subreddits) {
-            names.add(subreddit.data?.displayName!!)
+        val subreddits = res.body()?.data?.children!!
+        val names = subreddits.map { info -> info.data?.displayName!! }
+        val before = res.body()?.data?.before
+        val after = res.body()?.data?.after
+        val count = res.body()?.data?.dist!!
+        return Page(names, before, after, count)
+    }
+
+    suspend fun getMySubscribedSubreddits(after: String?, count: Int, limit: Int): Page<String> {
+        val token = getRedditToken()
+        var reddit: RedditApiService? = null
+        redditServiceMutex.withLock {
+            reddit = ServiceGenerator.getRedditService(token)
         }
-        var after = res.body()?.data?.after
-        var count = res.body()?.data?.dist!!
-        while (after != null) {
-            res = reddit!!.getMySubscribedSubreddits(after, count, 100)
-            if (!res.isSuccessful) throw Exception("Unable to fetch subreddits")
-            subreddits = res.body()?.data?.children!!
-            for (subreddit in subreddits) {
-                names.add(subreddit.data?.displayName!!)
-            }
-            after = res.body()?.data?.after
-            count += res.body()?.data?.dist!!
-        }
-        return names
+        val res = reddit!!.getMySubscribedSubreddits(after, count, limit)
+        if (!res.isSuccessful) throw Exception("Unable to fetch subreddits")
+        val subreddits = res.body()?.data?.children!!
+        val names = subreddits.map { info -> info.data?.displayName!! }
+        val before = res.body()?.data?.before
+        val newAfter = res.body()?.data?.after
+        val newCount = count + res.body()?.data?.dist!!
+        return Page(names, before, newAfter, newCount)
     }
 
     suspend fun getMyInfo(): SelfInfo {
@@ -657,9 +685,9 @@ object ApiFetcher {
     }
 
 
-    fun getMyFrontPagePosts(sort: String, period: String, limit: Int, listener: Listener<List<Post>>) {
+    fun getMyFrontPagePosts(sort: String, period: String, limit: Int, listener: Listener<Page<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<Post>? = try {
+            val res = try {
                 getMyFrontPagePosts(sort, period, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
@@ -675,10 +703,10 @@ object ApiFetcher {
         after: String?,
         count: Int,
         limit: Int,
-        listener: Listener<List<Post>>
+        listener: Listener<Page<Post>>
     ) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<Post>? = try {
+            val res = try {
                 getMyFrontPagePosts(sort, period, after, count, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
@@ -688,9 +716,9 @@ object ApiFetcher {
         }
     }
 
-    fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int, listener: Listener<List<Post>>) {
+    fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int, listener: Listener<Page<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<Post>? = try {
+            val res = try {
                 getMyMultiPosts(name, sort, period, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
@@ -707,10 +735,10 @@ object ApiFetcher {
         after: String?,
         count: Int,
         limit: Int,
-        listener: Listener<List<Post>>
+        listener: Listener<Page<Post>>
     ) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<Post>? = try {
+            val res = try {
                 getMyMultiPosts(name, sort, period, after, count, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
@@ -720,9 +748,9 @@ object ApiFetcher {
         }
     }
 
-    fun getSubredditPosts(name: String, sort: String, period: String, limit: Int, listener: Listener<List<Post>>) {
+    fun getSubredditPosts(name: String, sort: String, period: String, limit: Int, listener: Listener<Page<Post>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<Post>? = try {
+            val res = try {
                 getSubredditPosts(name, sort, period, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
@@ -739,10 +767,10 @@ object ApiFetcher {
         after: String?,
         count: Int,
         limit: Int,
-        listener: Listener<List<Post>>
+        listener: Listener<Page<Post>>
     ) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<Post>? = try {
+            val res = try {
                 getSubredditPosts(name, sort, period, after, count, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
@@ -764,10 +792,22 @@ object ApiFetcher {
         }
     }
 
-    fun getMySubscribedSubreddits(listener: Listener<List<String>>) {
+    fun getMySubscribedSubreddits(limit: Int, listener: Listener<Page<String>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<String>? = try {
-                getMySubscribedSubreddits()
+            val res = try {
+                getMySubscribedSubreddits(limit)
+            } catch (t: Throwable) {
+                listener.onFailure(t)
+                null
+            }
+            if (res != null) listener.onComplete(res)
+        }
+    }
+
+    fun getMySubscribedSubreddits(after: String?, count: Int, limit: Int, listener: Listener<Page<String>>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val res = try {
+                getMySubscribedSubreddits(after, count, limit)
             } catch (t: Throwable) {
                 listener.onFailure(t)
                 null
@@ -788,7 +828,7 @@ object ApiFetcher {
         }
     }
 
-    fun getFeedPosts(feed: Feed, limit: Int, listener: Listener<List<Post>>) {
+    fun getFeedPosts(feed: Feed, limit: Int, listener: Listener<Page<Post>>) {
         when {
             feed.feedType == Feed.TYPE_FRONTPAGE ->
                 getMyFrontPagePosts(feed.sort, feed.period, limit, listener)
@@ -803,7 +843,7 @@ object ApiFetcher {
         }
     }
 
-    fun getFeedPosts(feed: Feed, after: String?, count: Int, limit: Int, listener: Listener<List<Post>>) {
+    fun getFeedPosts(feed: Feed, after: String?, count: Int, limit: Int, listener: Listener<Page<Post>>) {
         when {
             feed.feedType == Feed.TYPE_FRONTPAGE ->
                 getMyFrontPagePosts(feed.sort, feed.period, after, count, limit, listener)
@@ -823,5 +863,7 @@ object ApiFetcher {
 
         fun onFailure(t: Throwable)
     }
+
+    data class Page<T>(val items: List<T>, val before: String?, val after: String?, val count: Int)
 
 }

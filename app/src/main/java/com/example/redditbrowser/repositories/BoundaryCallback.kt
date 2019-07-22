@@ -17,12 +17,15 @@ class BoundaryCallback(
     private val helper = PagingRequestHelper(executor)
 
     private var count = 0
+    private var after: String? = null
 
     override fun onZeroItemsLoaded() {
         helper.runIfNotRunning(PagingRequestHelper.RequestType.INITIAL) {
-            ApiFetcher.getFeedPosts(feed, pageSize, object : ApiFetcher.Listener<List<Post>> {
-                override fun onComplete(result: List<Post>) {
-                    insertItemsIntoDb(result, it)
+            ApiFetcher.getFeedPosts(feed, pageSize, object : ApiFetcher.Listener<ApiFetcher.Page<Post>> {
+                override fun onComplete(result: ApiFetcher.Page<Post>) {
+                    count = result.count
+                    after = result.after
+                    insertItemsIntoDb(result.items, it)
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -34,9 +37,11 @@ class BoundaryCallback(
 
     override fun onItemAtEndLoaded(itemAtEnd: Post) {
         helper.runIfNotRunning(PagingRequestHelper.RequestType.AFTER) {
-            ApiFetcher.getFeedPosts(feed, itemAtEnd.name, count, pageSize, object : ApiFetcher.Listener<List<Post>> {
-                override fun onComplete(result: List<Post>) {
-                    insertItemsIntoDb(result, it)
+            ApiFetcher.getFeedPosts(feed, after, count, pageSize, object : ApiFetcher.Listener<ApiFetcher.Page<Post>> {
+                override fun onComplete(result: ApiFetcher.Page<Post>) {
+                    count = result.count
+                    after = result.after
+                    insertItemsIntoDb(result.items, it)
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -49,7 +54,6 @@ class BoundaryCallback(
     override fun onItemAtFrontLoaded(itemAtFront: Post) {}
 
     private fun insertItemsIntoDb(resp: List<Post>, it: PagingRequestHelper.Request.Callback) {
-        count += resp.size
         executor.execute {
             handleResponse(feed, resp)
             it.recordSuccess()

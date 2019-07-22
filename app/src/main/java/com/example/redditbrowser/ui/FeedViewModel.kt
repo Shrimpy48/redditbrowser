@@ -16,8 +16,8 @@ class FeedViewModel(private val repository: PostRepository) : ViewModel() {
         repository.postsOfFeed(it, 30)
     }
 
-    val posts = switchMap(repoResult) { it.pagedList }!!
-    val refreshState = switchMap(repoResult) { it.refreshState }!!
+    val posts = switchMap(repoResult) { it.pagedList }
+    val refreshState = switchMap(repoResult) { it.refreshState }
 
     fun refresh() {
         repoResult.value?.refresh?.invoke()

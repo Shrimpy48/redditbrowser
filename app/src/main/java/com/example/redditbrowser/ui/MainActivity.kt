@@ -7,9 +7,11 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import android.util.Log
 import android.util.TypedValue
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
@@ -23,15 +25,11 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.paging.PagedList
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.redditbrowser.R
-import com.example.redditbrowser.apis.ApiFetcher
 import com.example.redditbrowser.apis.AuthValues
-import com.example.redditbrowser.apis.responses.SelfInfo
 import com.example.redditbrowser.datastructs.Feed
-import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_FRONTPAGE
-import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_MULTIREDDIT
-import com.example.redditbrowser.datastructs.Feed.Companion.TYPE_SUBREDDIT
 import com.example.redditbrowser.datastructs.NetworkState
 import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.utils.ServiceProvider
@@ -45,12 +43,12 @@ import kotlinx.android.synthetic.main.content_main.*
 import okhttp3.Cache
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
+class MainActivity : AppCompatActivity(),
     AdapterView.OnItemSelectedListener {
 
     companion object {
         const val DEFAULT_FEED = ""
-        const val DEFAULT_FEED_TYPE = TYPE_FRONTPAGE
+        const val DEFAULT_FEED_TYPE = Feed.TYPE_FRONTPAGE
         const val DEFAULT_SORT = ""
         const val DEFAULT_PERIOD = ""
         const val DEFAULT_COLS_LANDSCAPE = 3
@@ -58,7 +56,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         const val DEFAULT_SPACING = 8f
     }
 
-    private lateinit var model: FeedViewModel
+    private lateinit var feedModel: FeedViewModel
+    private lateinit var navModel: NavViewModel
 
     private lateinit var sortSpinner: Spinner
     private lateinit var periodSpinner: Spinner
@@ -66,12 +65,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var multis: ArrayList<String>? = null
     private var subreddits: ArrayList<String>? = null
 
-    private var username: String = AuthValues.redditUsername
+    private var username = AuthValues.redditUsername
 
     private var feed = DEFAULT_FEED
     private var feedType = DEFAULT_FEED_TYPE
-    private var sort: String = DEFAULT_SORT
-    private var period: String = DEFAULT_PERIOD
+    private var sort = DEFAULT_SORT
+    private var period = DEFAULT_PERIOD
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,8 +94,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        navView.setNavigationItemSelectedListener(this)
-
         sortSpinner = findViewById(R.id.sortSpinner)
         ArrayAdapter.createFromResource(this, R.array.sorts, android.R.layout.simple_spinner_item)
             .also { adapter ->
@@ -118,16 +115,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
 
         initTheme()
-        model = getViewModel()
+        feedModel = getFeedViewModel()
+        navModel = getNavViewModel()
         initList()
         initSwipeToRefresh()
-        initHeader(navView, savedInstanceState)
-        initMenu(navView, savedInstanceState)
+        initNavView(navView)
         feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
         sort = savedInstanceState?.getString("sort") ?: DEFAULT_SORT
         period = savedInstanceState?.getString("period") ?: DEFAULT_PERIOD
-        model.showFeed(Feed(feed, feedType, sort, period))
+        feedModel.showFeed(Feed(feed, feedType, sort, period))
     }
 
     override fun onBackPressed() {
@@ -156,36 +153,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.groupId) {
-            R.id.nav_multis -> {
-                feed = item.title as String
-                feedType = TYPE_MULTIREDDIT
-            }
-
-            R.id.nav_subscribed -> {
-                feed = item.title as String
-                feedType = TYPE_SUBREDDIT
-            }
-
-            else -> {
-                if (item.itemId == R.id.nav_frontpage) {
-                    feed = ""
-                    feedType = TYPE_FRONTPAGE
-                } else {
-                    feed = item.title as String
-                    feedType = TYPE_SUBREDDIT
-                }
-            }
-        }
-
-        updateFeed(feed, feedType, sort, period)
-
-        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
-        drawerLayout.closeDrawer(GravityCompat.START)
-        return true
     }
 
     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -252,9 +219,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         outState.putString("username", username)
     }
 
-    private fun getViewModel(): FeedViewModel {
+    private fun getFeedViewModel(): FeedViewModel {
         val repository = ServiceProvider.instance(this.applicationContext as Application, false).getRepository()
         return ViewModelProviders.of(this, FeedViewModel.Factory(repository)).get(FeedViewModel::class.java)
+    }
+
+    private fun getNavViewModel(): NavViewModel {
+        return ViewModelProviders.of(this).get(NavViewModel::class.java)
     }
 
     private fun initList() {
@@ -272,7 +243,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val adapter = PostsAdapter(this, showNsfw, autoPlay, glide, dataSource)
         list.adapter = adapter
-        model.posts.observe(this, Observer<PagedList<Post>> {
+        feedModel.posts.observe(this, Observer<PagedList<Post>> {
             adapter.submitList(it)
         })
 
@@ -299,90 +270,98 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun initSwipeToRefresh() {
-        model.refreshState.observe(this, Observer {
+        feedModel.refreshState.observe(this, Observer {
             swipe_refresh.isRefreshing = it == NetworkState.LOADING
         })
         swipe_refresh.setOnRefreshListener {
-            model.refresh()
+            feedModel.refresh()
         }
     }
 
-    private fun initHeader(navView: NavigationView, savedInstanceState: Bundle?) {
-        val parent = navView.getHeaderView(0)
-        val view = parent.findViewById<TextView>(R.id.usernameView)
-        if (savedInstanceState != null && savedInstanceState.containsKey("username")) {
-            username = savedInstanceState.getString("username")!!
-            view.text = username
-        } else {
-            ApiFetcher.getMyInfo(object : ApiFetcher.Listener<SelfInfo> {
-                override fun onComplete(result: SelfInfo) {
-                    username = result.name!!
-                    view.text = username
-                }
+    private fun initNavView(navView: NavigationView) {
+        val nameView = navView.findViewById<TextView>(R.id.usernameView)
+        val multiList = navView.findViewById<RecyclerView>(R.id.nav_list_multis)
+        val subredditList = navView.findViewById<RecyclerView>(R.id.nav_list_subs)
+        val frontView = navView.findViewById<TextView>(R.id.nav_list_frontpage)
+        val popularView = navView.findViewById<TextView>(R.id.nav_list_popular)
+        val allView = navView.findViewById<TextView>(R.id.nav_list_all)
+        val subEntryView = navView.findViewById<TextView>(R.id.nav_entry_subreddit)
 
-                override fun onFailure(t: Throwable) {
-                    Log.e("Header populating", t.localizedMessage)
-                }
-            })
-        }
-    }
-
-    private fun initMenu(navView: NavigationView, savedInstanceState: Bundle?) {
-        val menu = navView.menu
-        fetchMultis(menu, savedInstanceState)
-        fetchSubreddits(menu, savedInstanceState)
-
-        when (DEFAULT_FEED_TYPE) {
-            TYPE_FRONTPAGE -> navView.setCheckedItem(R.id.nav_frontpage)
-        }
-    }
-
-    private fun fetchSubreddits(menu: Menu, savedInstanceState: Bundle?) {
-        if (savedInstanceState != null && savedInstanceState.containsKey("subreddits")) {
-            subreddits = savedInstanceState.getStringArrayList("subreddits")
-            if (subreddits != null) {
-                for (subreddit in subreddits!!)
-                    menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
-                return
-            }
-        }
-        ApiFetcher.getMySubscribedSubreddits(object : ApiFetcher.Listener<List<String>> {
-            override fun onComplete(result: List<String>) {
-                subreddits = result as ArrayList<String>
-                for (subreddit in result)
-                    menu.add(R.id.nav_subscribed, Menu.NONE, Menu.NONE, subreddit)
-            }
-
-            override fun onFailure(t: Throwable) {
-                Log.e("Subreddit fetching", t.localizedMessage)
-            }
+        navModel.username.observe(this, Observer {
+            nameView.text = it
         })
-    }
 
-    private fun fetchMultis(menu: Menu, savedInstanceState: Bundle?) {
-        if (savedInstanceState != null && savedInstanceState.containsKey("multis")) {
-            multis = savedInstanceState.getStringArrayList("multis")
-            if (multis != null) {
-                for (multi in multis!!)
-                    menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
-                return
+        frontView.setOnClickListener {
+            feed = ""
+            feedType = Feed.TYPE_FRONTPAGE
+            updateFeed(feed, feedType, sort, period)
+        }
+
+        popularView.setOnClickListener {
+            feed = "popular"
+            feedType = Feed.TYPE_SUBREDDIT
+            updateFeed(feed, feedType, sort, period)
+        }
+
+        allView.setOnClickListener {
+            feed = "all"
+            feedType = Feed.TYPE_SUBREDDIT
+            updateFeed(feed, feedType, sort, period)
+        }
+
+        val multiAdapter = MultisAdapter { multi ->
+            feed = multi
+            feedType = Feed.TYPE_MULTIREDDIT
+            updateFeed(feed, feedType, sort, period)
+        }
+        multiList.adapter = multiAdapter
+        navModel.multis.observe(this, Observer {
+            multiAdapter.submitList(it)
+        })
+
+        val subAdapter = SubredditsAdapter { sub ->
+            feed = sub
+            feedType = Feed.TYPE_SUBREDDIT
+            updateFeed(feed, feedType, sort, period)
+        }
+        subredditList.adapter = subAdapter
+        navModel.subreddits.observe(this, Observer {
+            subAdapter.submitList(it)
+        })
+
+        subEntryView.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_GO) {
+                Log.d("Input", "Received ${subEntryView.text}")
+                fromEntry(subEntryView)
+                true
+            } else {
+                false
             }
         }
-        ApiFetcher.getMyMultis(object : ApiFetcher.Listener<List<String>> {
-            override fun onComplete(result: List<String>) {
-                multis = result as ArrayList<String>
-                for (multi in result)
-                    menu.add(R.id.nav_multis, Menu.NONE, Menu.NONE, multi)
-            }
 
-            override fun onFailure(t: Throwable) {
-                Log.e("Multi fetching", t.localizedMessage)
+        subEntryView.setOnKeyListener { _, keyCode, event ->
+            if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
+                Log.d("Input", "Received ${subEntryView.text}")
+                fromEntry(subEntryView)
+                true
+            } else {
+                false
             }
-        })
+        }
+    }
+
+    private fun fromEntry(subEntryView: TextView) {
+        subEntryView.text.trim().toString().let {
+            if (it.isNotEmpty()) {
+                feed = it
+                feedType = Feed.TYPE_SUBREDDIT
+                updateFeed(feed, feedType, sort, period)
+            }
+        }
     }
 
     private fun updateFeed(feed: String, feedType: Int, sort: String = "", period: String = "") {
-        if (model.showFeed(Feed(feed, feedType, sort, period))) {
+        if (feedModel.showFeed(Feed(feed, feedType, sort, period))) {
 //            list.scrollToPosition(0)  // This causes StaggeredGridLayoutManager to draw views offscreen due to a bug
             (list.adapter as? PostsAdapter)?.submitList(null)
         }

@@ -37,12 +37,12 @@ class PostRepository(
     private fun refresh(feed: Feed): LiveData<NetworkState> {
         val networkState = MutableLiveData<NetworkState>()
         networkState.value = NetworkState.LOADING
-        ApiFetcher.getFeedPosts(feed, networkPageSize, object : ApiFetcher.Listener<List<Post>> {
-            override fun onComplete(result: List<Post>) {
+        ApiFetcher.getFeedPosts(feed, networkPageSize, object : ApiFetcher.Listener<ApiFetcher.Page<Post>> {
+            override fun onComplete(result: ApiFetcher.Page<Post>) {
                 executor.execute {
                     db.runInTransaction {
                         db.posts().deleteByFeed(feed.feed, feed.feedType, feed.sort, feed.period)
-                        insertResultIntoDb(feed, result)
+                        insertResultIntoDb(feed, result.items)
                     }
 
                     networkState.postValue(NetworkState.LOADED)
