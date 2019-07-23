@@ -15,6 +15,7 @@ import kotlinx.android.synthetic.main.image_post.view.*
 import kotlinx.android.synthetic.main.post_info.view.*
 
 
+
 class ImagePostViewHolder(
     cardView: View,
     private val context: Context,
