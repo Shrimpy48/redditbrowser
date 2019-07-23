@@ -19,6 +19,7 @@ import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.upstream.DataSource
+import kotlinx.android.synthetic.main.post_info.view.*
 import kotlinx.android.synthetic.main.video_post.view.*
 
 class VideoPostViewHolder(
@@ -55,7 +56,7 @@ class VideoPostViewHolder(
 
     fun bind(post: Post?) {
         this.post = post
-        titleView.text = post?.title ?: "loading"
+        titleView.text = post?.title ?: context.getString(R.string.post_loading)
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 

@@ -15,6 +15,7 @@ class PostsAdapter(
     private val context: Context,
     private val showNsfw: Boolean,
     private val autoPlay: Boolean,
+    private val useWebView: Boolean,
     private val glide: GlideRequests,
     private val dataSource: DataSource.Factory
 ) :
@@ -48,8 +49,8 @@ class PostsAdapter(
             R.layout.text_post -> TextPostViewHolder.create(parent, context, showNsfw)
             R.layout.image_post -> ImagePostViewHolder.create(parent, context, showNsfw, autoPlay, glide)
             R.layout.video_post -> VideoPostViewHolder.create(parent, context, showNsfw, autoPlay, dataSource)
-            R.layout.embed_post -> EmbedPostViewHolder.create(parent, showNsfw)
-            R.layout.url_post -> UrlPostViewHolder.create(parent, showNsfw)
+            R.layout.embed_post -> EmbedPostViewHolder.create(parent, context, showNsfw)
+            R.layout.url_post -> UrlPostViewHolder.create(parent, context, showNsfw)
             R.layout.placeholder_post -> PlaceholderPostViewHolder.create(parent)
             else -> throw IllegalArgumentException("unknown view type $viewType")
         }
@@ -67,8 +68,8 @@ class PostsAdapter(
             Post.IMAGE -> R.layout.image_post
             Post.VIDEO -> R.layout.video_post
             Post.VIDEO_DASH -> R.layout.video_post
-            Post.EMBED -> R.layout.embed_post
-            Post.EMBED_HTML -> R.layout.embed_post
+            Post.EMBED -> if (useWebView) R.layout.embed_post else R.layout.url_post
+            Post.EMBED_HTML -> if (useWebView) R.layout.embed_post else R.layout.url_post
             Post.URL -> R.layout.url_post
             null -> R.layout.placeholder_post
             else -> throw IllegalArgumentException("Invalid post type ${getItem(position)?.type}")

@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.ui.FullscreenPostActivity
+import kotlinx.android.synthetic.main.post_info.view.*
 import kotlinx.android.synthetic.main.text_post.view.*
 
 class TextPostViewHolder(cardView: View, private val context: Context, private val showNsfw: Boolean) :
@@ -30,14 +31,14 @@ class TextPostViewHolder(cardView: View, private val context: Context, private v
 
     fun bind(post: Post?) {
         this.post = post
-        titleView.text = post?.title ?: "loading"
+        titleView.text = post?.title ?: context.getString(R.string.post_loading)
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 
         val isNsfw = post?.nsfw ?: false
         if (showNsfw or !isNsfw)
             selftextView.text = post?.selftext ?: ""
-        else selftextView.text = "NSFW"
+        else selftextView.text = context.getString(R.string.nsfw)
 
         if (post != null)
             selftextView.setOnClickListener {

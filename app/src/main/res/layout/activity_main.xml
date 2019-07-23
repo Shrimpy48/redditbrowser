@@ -34,26 +34,27 @@
                               android:orientation="vertical">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                               android:text="@string/menu_frontpage"
-                              android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                              android:textAppearance="@style/NavItem"
                               android:id="@+id/nav_list_frontpage"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                               android:text="@string/menu_popular"
-                              android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                              android:textAppearance="@style/NavItem"
                               android:id="@+id/nav_list_popular"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                               android:text="@string/menu_all"
-                              android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                              android:textAppearance="@style/NavItem"
                               android:id="@+id/nav_list_all"/>
                 </LinearLayout>
 
                 <EditText android:layout_width="match_parent" android:layout_height="wrap_content"
                           android:hint="@string/menu_subreddit_box" android:importantForAutofill="no"
+                          android:imeOptions="actionGo"
                           android:inputType="textNoSuggestions" android:id="@+id/nav_entry_subreddit"/>
 
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:labelFor="@+id/nav_list_multis"
                           android:text="@string/menu_multis"
-                          android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+                          android:textAppearance="@style/NavHeading"/>
                 <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
                                                            android:layout_height="wrap_content"
                                                            android:id="@+id/nav_list_multis"
@@ -62,7 +63,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                           android:labelFor="@+id/nav_list_subs"
                           android:text="@string/menu_subscribed"
-                          android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+                          android:textAppearance="@style/NavHeading"/>
                 <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
                                                            android:layout_height="wrap_content"
                                                            android:id="@+id/nav_list_subs"

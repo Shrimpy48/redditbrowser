@@ -14,7 +14,6 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -25,7 +24,6 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.paging.PagedList
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.redditbrowser.R
 import com.example.redditbrowser.apis.AuthValues
@@ -39,7 +37,11 @@ import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.util.Util
 import com.google.android.material.navigation.NavigationView
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main.view.*
+import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import kotlinx.android.synthetic.main.nav_header_main.view.*
 import okhttp3.Cache
 import kotlin.math.roundToInt
 
@@ -59,9 +61,6 @@ class MainActivity : AppCompatActivity(),
     private lateinit var feedModel: FeedViewModel
     private lateinit var navModel: NavViewModel
 
-    private lateinit var sortSpinner: Spinner
-    private lateinit var periodSpinner: Spinner
-
     private var multis: ArrayList<String>? = null
     private var subreddits: ArrayList<String>? = null
 
@@ -76,7 +75,7 @@ class MainActivity : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        val toolbar: Toolbar = toolbar
         setSupportActionBar(toolbar)
 
 //        val fab: FloatingActionButton = findViewById(R.id.fab)
@@ -84,8 +83,8 @@ class MainActivity : AppCompatActivity(),
 //            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                .setAction("Action", null).show()
 //        }
-        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
-        val navView: NavigationView = findViewById(R.id.nav_view)
+        val drawerLayout: DrawerLayout = drawer_layout
+        val navView: NavigationView = nav_view
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar,
             R.string.navigation_drawer_open,
@@ -94,7 +93,7 @@ class MainActivity : AppCompatActivity(),
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        sortSpinner = findViewById(R.id.sortSpinner)
+        val sortSpinner = sort_spinner
         ArrayAdapter.createFromResource(this, R.array.sorts, android.R.layout.simple_spinner_item)
             .also { adapter ->
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -102,7 +101,7 @@ class MainActivity : AppCompatActivity(),
             }
         sortSpinner.onItemSelectedListener = this
 
-        periodSpinner = findViewById(R.id.periodSpinner)
+        val periodSpinner = period_spinner
         ArrayAdapter.createFromResource(this, R.array.periods, android.R.layout.simple_spinner_item)
             .also { adapter ->
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -128,7 +127,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onBackPressed() {
-        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
+        val drawerLayout: DrawerLayout = drawer_layout
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START)
         } else {
@@ -156,7 +155,8 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-        if (parent?.id == R.id.sortSpinner) {
+        val periodSpinner = period_spinner
+        if (parent?.id == R.id.sort_spinner) {
             when (position) {
                 0 -> { // default
                     sort = ""
@@ -240,8 +240,9 @@ class MainActivity : AppCompatActivity(),
 
         val showNsfw = prefs.getBoolean("showNsfw", false)
         val autoPlay = prefs.getBoolean("autoPlay", false)
+        val useWebView = prefs.getBoolean("useWebView", false)
 
-        val adapter = PostsAdapter(this, showNsfw, autoPlay, glide, dataSource)
+        val adapter = PostsAdapter(this, showNsfw, autoPlay, useWebView, glide, dataSource)
         list.adapter = adapter
         feedModel.posts.observe(this, Observer<PagedList<Post>> {
             adapter.submitList(it)
@@ -279,13 +280,13 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun initNavView(navView: NavigationView) {
-        val nameView = navView.findViewById<TextView>(R.id.usernameView)
-        val multiList = navView.findViewById<RecyclerView>(R.id.nav_list_multis)
-        val subredditList = navView.findViewById<RecyclerView>(R.id.nav_list_subs)
-        val frontView = navView.findViewById<TextView>(R.id.nav_list_frontpage)
-        val popularView = navView.findViewById<TextView>(R.id.nav_list_popular)
-        val allView = navView.findViewById<TextView>(R.id.nav_list_all)
-        val subEntryView = navView.findViewById<TextView>(R.id.nav_entry_subreddit)
+        val nameView = navView.usernameView
+        val multiList = navView.nav_list_multis
+        val subredditList = navView.nav_list_subs
+        val frontView = navView.nav_list_frontpage
+        val popularView = navView.nav_list_popular
+        val allView = navView.nav_list_all
+        val subEntryView = navView.nav_entry_subreddit
 
         navModel.username.observe(this, Observer {
             nameView.text = it
@@ -330,6 +331,7 @@ class MainActivity : AppCompatActivity(),
         })
 
         subEntryView.setOnEditorActionListener { _, actionId, _ ->
+            Log.d("Input", "EditorAction $actionId")
             if (actionId == EditorInfo.IME_ACTION_GO) {
                 Log.d("Input", "Received ${subEntryView.text}")
                 fromEntry(subEntryView)
@@ -340,6 +342,7 @@ class MainActivity : AppCompatActivity(),
         }
 
         subEntryView.setOnKeyListener { _, keyCode, event ->
+            Log.d("Input", "Key $keyCode")
             if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
                 Log.d("Input", "Received ${subEntryView.text}")
                 fromEntry(subEntryView)

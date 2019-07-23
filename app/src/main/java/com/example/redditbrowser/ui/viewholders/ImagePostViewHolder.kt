@@ -12,6 +12,7 @@ import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.ui.FullscreenPostActivity
 import com.example.redditbrowser.web.GlideRequests
 import kotlinx.android.synthetic.main.image_post.view.*
+import kotlinx.android.synthetic.main.post_info.view.*
 
 
 class ImagePostViewHolder(
@@ -45,7 +46,7 @@ class ImagePostViewHolder(
 
     fun bind(post: Post?) {
         this.post = post
-        titleView.text = post?.title ?: "loading"
+        titleView.text = post?.title ?: context.getString(R.string.post_loading)
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 

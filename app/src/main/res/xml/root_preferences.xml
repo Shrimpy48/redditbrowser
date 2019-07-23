@@ -49,6 +49,10 @@
                 android:numeric="decimal"
                 android:inputType="numberDecimal"/>
 
+        <SwitchPreferenceCompat
+                app:key="useWebView"
+                app:title="@string/web_view_title"/>
+
     </PreferenceCategory>
 
     <PreferenceCategory

@@ -21,11 +21,11 @@
 
             <androidx.appcompat.widget.AppCompatSpinner android:layout_width="wrap_content"
                                                         android:layout_height="wrap_content"
-                                                        android:id="@+id/sortSpinner"/>
+                                                        android:id="@+id/sort_spinner"/>
 
             <androidx.appcompat.widget.AppCompatSpinner android:layout_width="wrap_content"
                                                         android:layout_height="wrap_content"
-                                                        android:id="@+id/periodSpinner"/>
+                                                        android:id="@+id/period_spinner"/>
 
         </androidx.appcompat.widget.Toolbar>
 

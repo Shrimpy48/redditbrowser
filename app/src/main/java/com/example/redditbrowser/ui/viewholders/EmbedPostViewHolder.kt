@@ -1,5 +1,6 @@
 package com.example.redditbrowser.ui.viewholders
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,9 +9,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
 import kotlinx.android.synthetic.main.embed_post.view.*
+import kotlinx.android.synthetic.main.post_info.view.*
 
 class EmbedPostViewHolder(
     cardView: View,
+    private val context: Context,
     private val showNsfw: Boolean
 ) :
     RecyclerView.ViewHolder(cardView) {
@@ -22,16 +25,16 @@ class EmbedPostViewHolder(
     private var post: Post? = null
 
     companion object {
-        fun create(parent: ViewGroup, showNsfw: Boolean): EmbedPostViewHolder {
+        fun create(parent: ViewGroup, context: Context, showNsfw: Boolean): EmbedPostViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.embed_post, parent, false)
-            return EmbedPostViewHolder(view, showNsfw)
+            return EmbedPostViewHolder(view, context, showNsfw)
         }
     }
 
     fun bind(post: Post?) {
         this.post = post
-        titleView.text = post?.title ?: "loading"
+        titleView.text = post?.title ?: context.getString(R.string.post_loading)
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 
