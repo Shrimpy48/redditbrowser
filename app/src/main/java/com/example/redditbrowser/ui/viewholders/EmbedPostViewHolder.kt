@@ -55,6 +55,10 @@ class EmbedPostViewHolder(
                 val params = embedView.layoutParams
                 params.height = post.height * embedView.width / post.width
                 embedView.layoutParams = params
+            } else {
+                val params = embedView.layoutParams
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                embedView.layoutParams = params
             }
 
             if (showNsfw || !post.nsfw) {

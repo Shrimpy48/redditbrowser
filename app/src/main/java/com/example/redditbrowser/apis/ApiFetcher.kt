@@ -9,9 +9,12 @@ import com.example.redditbrowser.apis.services.ImgurApiService
 import com.example.redditbrowser.apis.services.RedditApiService
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.datastructs.Post
+import com.example.redditbrowser.web.HttpClientBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import okhttp3.Request
+import org.jsoup.Jsoup
 
 
 object ApiFetcher {
@@ -241,7 +244,76 @@ object ApiFetcher {
         )
     }
 
+    private suspend fun scrapeUrl(
+        name: String,
+        id: String,
+        title: String,
+        subreddit: String,
+        author: String,
+        isNsfw: Boolean,
+        isSpoiler: Boolean,
+        score: Int,
+        url: String
+    ): Post? = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url(url).get().build()
+        val response = HttpClientBuilder.getClient().newCall(request).execute()
+        if (!response.isSuccessful) return@withContext null
+        val html = response.body().toString()
+        val doc = Jsoup.parse(html)
+        val videos = doc.getElementsByTag("video")
+        if (videos.isNotEmpty()) {
+            val type = Post.VIDEO
+            val video = videos.first()
+            val sources = video.getElementsByTag("source")
+            val contentUrl = sources.first().attr("abs:src")
+            val width = video.attr("width").toIntOrNull()
+            val height = video.attr("height").toIntOrNull()
+            return@withContext Post(
+                name,
+                id,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                isSpoiler,
+                type,
+                score,
+                content = contentUrl,
+                postUrl = url,
+                width = width,
+                height = height
+            )
+        }
+        val images = doc.getElementsByTag("img")
+        if (images.isNotEmpty()) {
+            val type = Post.IMAGE
+            val image = images.first()
+            val contentUrl = image.attr("abs:src")
+            val width = image.attr("width").toIntOrNull()
+            val height = image.attr("height").toIntOrNull()
+            return@withContext Post(
+                name,
+                id,
+                title,
+                author,
+                subreddit,
+                isNsfw,
+                isSpoiler,
+                type,
+                score,
+                content = contentUrl,
+                postUrl = url,
+                width = width,
+                height = height
+            )
+        }
+        null
+    }
+
     private suspend fun parsePost(info: PostInfo): Post {
+
+        val useScraping = true
+
         val title = info.title
         val subreddit = info.subreddit
         val name = info.name
@@ -389,6 +461,10 @@ object ApiFetcher {
                 height = height
             )
         }
+        if (useScraping && info.url != null) {
+            val post = scrapeUrl(name, id, title, subreddit, author, isNsfw, isSpoiler, score, info.url!!)
+            if (post != null) return post
+        }
         if (info.secureMediaEmbed != null && info.secureMediaEmbed?.content != null) {
             val content = info.secureMediaEmbed?.content
             val width = info.secureMediaEmbed?.width
@@ -491,7 +567,8 @@ object ApiFetcher {
         )
     }
 
-    suspend fun getMyFrontPagePosts(sort: String, period: String, limit: Int): Page<Post> {
+    suspend fun getMyFrontPagePosts(sort: String, period: String, limit: Int): Page<Post> =
+        withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -507,7 +584,7 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val after = res.body()?.data?.after
         val count = res.body()?.data?.dist!!
-        return Page(processed, before, after, count)
+            Page(processed, before, after, count)
     }
 
     suspend fun getMyFrontPagePosts(
@@ -516,7 +593,7 @@ object ApiFetcher {
         after: String?,
         count: Int,
         limit: Int
-    ): Page<Post> {
+    ): Page<Post> = withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -532,10 +609,11 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val newAfter = res.body()?.data?.after
         val newCount = count + res.body()?.data?.dist!!
-        return Page(processed, before, newAfter, newCount)
+        Page(processed, before, newAfter, newCount)
     }
 
-    suspend fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int): Page<Post> {
+    suspend fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int): Page<Post> =
+        withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -551,7 +629,7 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val after = res.body()?.data?.after
         val count = res.body()?.data?.dist!!
-        return Page(processed, before, after, count)
+            Page(processed, before, after, count)
     }
 
     suspend fun getMyMultiPosts(
@@ -561,7 +639,7 @@ object ApiFetcher {
         after: String?,
         count: Int,
         limit: Int
-    ): Page<Post> {
+    ): Page<Post> = withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -577,10 +655,11 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val newAfter = res.body()?.data?.after
         val newCount = count + res.body()?.data?.dist!!
-        return Page(processed, before, newAfter, newCount)
+        Page(processed, before, newAfter, newCount)
     }
 
-    suspend fun getSubredditPosts(name: String, sort: String, period: String, limit: Int): Page<Post> {
+    suspend fun getSubredditPosts(name: String, sort: String, period: String, limit: Int): Page<Post> =
+        withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -596,7 +675,7 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val after = res.body()?.data?.after
         val count = res.body()?.data?.dist!!
-        return Page(processed, before, after, count)
+            Page(processed, before, after, count)
     }
 
     suspend fun getSubredditPosts(
@@ -606,7 +685,7 @@ object ApiFetcher {
         after: String?,
         count: Int,
         limit: Int
-    ): Page<Post> {
+    ): Page<Post> = withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -622,10 +701,10 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val newAfter = res.body()?.data?.after
         val newCount = count + res.body()?.data?.dist!!
-        return Page(processed, before, newAfter, newCount)
+        Page(processed, before, newAfter, newCount)
     }
 
-    suspend fun getMyMultis(): List<String> {
+    suspend fun getMyMultis(): List<String> = withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -634,10 +713,10 @@ object ApiFetcher {
         val res = reddit!!.getMyMultis()
         if (!res.isSuccessful) throw Exception("Unable to fetch multis")
         val multis = res.body()!!
-        return multis.map { info -> info.data?.displayName!! }
+        multis.map { info -> info.data?.displayName!! }
     }
 
-    suspend fun getMySubscribedSubreddits(limit: Int): Page<String> {
+    suspend fun getMySubscribedSubreddits(limit: Int): Page<String> = withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -650,10 +729,11 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val after = res.body()?.data?.after
         val count = res.body()?.data?.dist!!
-        return Page(names, before, after, count)
+        Page(names, before, after, count)
     }
 
-    suspend fun getMySubscribedSubreddits(after: String?, count: Int, limit: Int): Page<String> {
+    suspend fun getMySubscribedSubreddits(after: String?, count: Int, limit: Int): Page<String> =
+        withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -666,10 +746,10 @@ object ApiFetcher {
         val before = res.body()?.data?.before
         val newAfter = res.body()?.data?.after
         val newCount = count + res.body()?.data?.dist!!
-        return Page(names, before, newAfter, newCount)
+            Page(names, before, newAfter, newCount)
     }
 
-    suspend fun getMyInfo(): SelfInfo {
+    suspend fun getMyInfo(): SelfInfo = withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -677,7 +757,7 @@ object ApiFetcher {
         }
         val res = reddit!!.getMyInfo()
         if (!res.isSuccessful) throw Exception("Unable to fetch info")
-        return res.body()!!
+        res.body()!!
     }
 
     suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {

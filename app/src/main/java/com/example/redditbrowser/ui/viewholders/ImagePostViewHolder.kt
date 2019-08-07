@@ -68,7 +68,13 @@ class ImagePostViewHolder(
                 val params = imageView.layoutParams
                 params.height = post.height * imageView.width / post.width
                 imageView.layoutParams = params
+            } else {
+                val params = imageView.layoutParams
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                imageView.layoutParams = params
             }
+
+
             if (showNsfw or !post.nsfw) {
                 var loader = glide.load(post.content)
                     .placeholder(R.drawable.ic_image_black_24dp)

@@ -51,6 +51,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.6.0'
     implementation 'com.squareup.okhttp3:okhttp:3.12.3'  // Later versions use API 26+ invoke-customs
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.3'
+    implementation 'org.jsoup:jsoup:1.12.1'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'

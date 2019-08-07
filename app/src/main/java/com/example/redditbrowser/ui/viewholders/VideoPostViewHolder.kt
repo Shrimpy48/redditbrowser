@@ -85,7 +85,13 @@ class VideoPostViewHolder(
                 val params = videoView.layoutParams
                 params.height = post.height * videoView.width / post.width
                 videoView.layoutParams = params
+            } else {
+                val params = videoView.layoutParams
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                videoView.layoutParams = params
             }
+
+
             if (showNsfw or !post.nsfw) {
                 val mediaSource = if (post.type == Post.VIDEO_DASH) DashMediaSource.Factory(
                     DefaultDashChunkSource.Factory(dataSourceFactory),
