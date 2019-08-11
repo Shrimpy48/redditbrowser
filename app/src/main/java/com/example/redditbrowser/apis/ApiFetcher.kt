@@ -19,6 +19,12 @@ import org.jsoup.Jsoup
 
 object ApiFetcher {
 
+    private const val useVideoScraping = true
+    private const val useOtherScraping = false
+
+    private const val scrapingConditions =
+        ":not(:contains(logo), :containsData(logo), :contains(header), :containsData(header), :contains(avatar), :containsData(avatar), [class*=logo], [class*=thumb], [class*=avatar], [class*=header], [id*=logo], [id*=thumb], [id*=avatar], [id*=header], [itemprop*=logo], [itemprop*=thumb], [itemprop*=avatar], [itemprop*=header], [src*=logo], [src*=thumb], [src*=avatar], [src*=header])"
+
     private val redditAuth = ServiceGenerator.getRedditAuthService()
     private val gfyAuth = ServiceGenerator.getGfyAuthService()
 
@@ -142,7 +148,7 @@ object ApiFetcher {
         score: Int,
         url: String
     ): Post? {
-        val imgurId = url.substringAfterLast("/").substringBeforeLast(".")
+        val imgurId = url.substringAfterLast("/").substringBeforeLast(".").substringBefore("?")
         var service: ImgurApiService? = null
         imgurServiceMutex.withLock {
             service = ServiceGenerator.getImgurService()
@@ -207,7 +213,7 @@ object ApiFetcher {
         score: Int,
         url: String
     ): Post? {
-        val gfyId = url.substringAfterLast("/").substringBeforeLast(".").substringBefore("-")
+        val gfyId = url.substringAfterLast("/").substringBeforeLast(".").substringBefore("?").substringBefore("-")
         val token = getGfyToken()
         val contentUrl: String?
         val type: Int
@@ -219,7 +225,7 @@ object ApiFetcher {
         }
         val res = service!!.getGfycat(gfyId)
         if (res.isSuccessful) {
-            contentUrl = res.body()?.gfyItem?.mp4Url
+            contentUrl = res.body()?.gfyItem?.webmUrl
             type = Post.VIDEO
             width = res.body()?.gfyItem?.width
             height = res.body()?.gfyItem?.height
@@ -244,6 +250,16 @@ object ApiFetcher {
         )
     }
 
+    private fun getHtml(url: String): String? {
+        val request = Request.Builder().url(url).get().build()
+        val response = HttpClientBuilder.getClient().newCall(request).execute()
+        if (!response.isSuccessful) {
+            Log.d("Parser", "Failed to fetch HTML")
+            return null
+        }
+        return response.body()?.string()
+    }
+
     private suspend fun scrapeUrl(
         name: String,
         id: String,
@@ -255,65 +271,121 @@ object ApiFetcher {
         score: Int,
         url: String
     ): Post? = withContext(Dispatchers.IO) {
-        val request = Request.Builder().url(url).get().build()
-        val response = HttpClientBuilder.getClient().newCall(request).execute()
-        if (!response.isSuccessful) return@withContext null
-        val html = response.body().toString()
+
+        if (!(useVideoScraping || useOtherScraping)) return@withContext null
+
+        Log.d("Parser", "Scraping $url")
+
+        val html = getHtml(url)
         val doc = Jsoup.parse(html)
-        val videos = doc.getElementsByTag("video")
-        if (videos.isNotEmpty()) {
-            val type = Post.VIDEO
-            val video = videos.first()
-            val sources = video.getElementsByTag("source")
-            val contentUrl = sources.first().attr("abs:src")
-            val width = video.attr("width").toIntOrNull()
-            val height = video.attr("height").toIntOrNull()
-            return@withContext Post(
-                name,
-                id,
-                title,
-                author,
-                subreddit,
-                isNsfw,
-                isSpoiler,
-                type,
-                score,
-                content = contentUrl,
-                postUrl = url,
-                width = width,
-                height = height
-            )
+
+        if (useVideoScraping) {
+            val video = doc.selectFirst("video$scrapingConditions")
+            if (video != null) {
+                Log.d("Parser", "Fetched video")
+                val type = Post.VIDEO
+                Log.d("Parser", "-> ${video.outerHtml()}")
+                val sources = video.getElementsByTag("source")
+                val contentUrl = sources.first().attr("abs:src")
+                val width = video.attr("width").toIntOrNull()
+                val height = video.attr("height").toIntOrNull()
+                return@withContext Post(
+                    name,
+                    id,
+                    title,
+                    author,
+                    subreddit,
+                    isNsfw,
+                    isSpoiler,
+                    type,
+                    score,
+                    content = contentUrl,
+                    postUrl = url,
+                    width = width,
+                    height = height
+                )
+            }
         }
-        val images = doc.getElementsByTag("img")
-        if (images.isNotEmpty()) {
-            val type = Post.IMAGE
-            val image = images.first()
-            val contentUrl = image.attr("abs:src")
-            val width = image.attr("width").toIntOrNull()
-            val height = image.attr("height").toIntOrNull()
-            return@withContext Post(
-                name,
-                id,
-                title,
-                author,
-                subreddit,
-                isNsfw,
-                isSpoiler,
-                type,
-                score,
-                content = contentUrl,
-                postUrl = url,
-                width = width,
-                height = height
-            )
+        if (useOtherScraping) {
+            val embed = doc.selectFirst("meta[property=og:video:url]")
+            if (embed != null) {
+                Log.d("Parser", "Fetched embed")
+                Log.d("Parser", "-> ${embed.outerHtml()}")
+                val width = doc.selectFirst("meta[property=og:video:width]")
+                    ?.attr("content")
+                    ?.toIntOrNull()
+                val height = doc.selectFirst("meta[property=og:video:height]")
+                    ?.attr("content")
+                    ?.toIntOrNull()
+                val contentUrl = embed.attr("content")
+                val type = Post.EMBED
+                return@withContext Post(
+                    name,
+                    id,
+                    title,
+                    author,
+                    subreddit,
+                    isNsfw,
+                    isSpoiler,
+                    type,
+                    score,
+                    content = contentUrl,
+                    postUrl = url,
+                    width = width,
+                    height = height
+                )
+            }
+            var embedFrame = html?.substringAfter("embedCode\":\"", "")
+                ?.substringBefore("<\\/iframe>")
+            if (embedFrame != null && embedFrame.isNotEmpty()) {
+                embedFrame += "<\\/iframe>"
+                Log.d("Parser", "Fetched embedCode")
+                Log.d("Parser", "-> $embedFrame")
+                val type = Post.EMBED_HTML
+                return@withContext Post(
+                    name,
+                    id,
+                    title,
+                    author,
+                    subreddit,
+                    isNsfw,
+                    isSpoiler,
+                    type,
+                    score,
+                    content = embedFrame,
+                    postUrl = url
+                )
+            }
+            val image = doc.selectFirst("img$scrapingConditions")
+            if (image != null) {
+                Log.d("Parser", "Fetched image")
+                val type = Post.IMAGE
+                Log.d("Parser", "-> ${image.outerHtml()}")
+                val contentUrl = image.attr("abs:src")
+                val width = image.attr("width")?.toIntOrNull()
+                val height = image.attr("height")?.toIntOrNull()
+                return@withContext Post(
+                    name,
+                    id,
+                    title,
+                    author,
+                    subreddit,
+                    isNsfw,
+                    isSpoiler,
+                    type,
+                    score,
+                    content = contentUrl,
+                    postUrl = url,
+                    width = width,
+                    height = height
+                )
+            }
         }
+        Log.d("Parser", "No content found")
         null
     }
 
     private suspend fun parsePost(info: PostInfo): Post {
-
-        val useScraping = true
-
         val title = info.title
         val subreddit = info.subreddit
         val name = info.name
@@ -461,7 +533,7 @@ object ApiFetcher {
                 height = height
             )
         }
-        if (useScraping && info.url != null) {
+        if (info.url != null) {
             val post = scrapeUrl(name, id, title, subreddit, author, isNsfw, isSpoiler, score, info.url!!)
             if (post != null) return post
         }
@@ -548,6 +620,9 @@ object ApiFetcher {
                 width = width,
                 height = height
             )
+        }
+        if (info.domain != null && "pornhub" in info.domain!!) {
+
         }
         Log.d("Parser", "no media found for ${info.name}")
         val contentUrl = info.url
