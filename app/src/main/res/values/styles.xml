@@ -6,6 +6,6 @@
 
     <style name="NavHeading" parent="TextAppearance.AppCompat.Subhead"/>
     <style name="NavItem" parent="TextAppearance.AppCompat.Menu"/>
-    <style name="CardTitle" parent="TextAppearance.AppCompat.Subhead"/>
-    <style name="CardInfo" parent="TextAppearance.AppCompat.Small"/>
+    <style name="CardTitle" parent="TextAppearance.AppCompat.Small"/>
+    <style name="CardInfo" parent="TextAppearance.AppCompat.Caption"/>
 </resources>

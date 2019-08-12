@@ -19,7 +19,7 @@ import org.jsoup.Jsoup
 
 object ApiFetcher {
 
-    private const val useVideoScraping = true
+    private const val useVideoScraping = false
     private const val useOtherScraping = false
 
     private const val scrapingConditions =
@@ -161,7 +161,7 @@ object ApiFetcher {
             val width: Int?
             val height: Int?
             when {
-                res.body()?.data.isNullOrEmpty() -> throw Exception("No content")
+                res.body()?.data.isNullOrEmpty() -> return null
 
                 res.body()?.data!![0].mp4 != null -> {
                     contentUrl = res.body()?.data!![0].mp4
@@ -225,7 +225,7 @@ object ApiFetcher {
         }
         val res = service!!.getGfycat(gfyId)
         if (res.isSuccessful) {
-            contentUrl = res.body()?.gfyItem?.webmUrl
+            contentUrl = res.body()?.gfyItem?.mp4Url ?: res.body()?.gfyItem?.webmUrl
             type = Post.VIDEO
             width = res.body()?.gfyItem?.width
             height = res.body()?.gfyItem?.height
@@ -620,9 +620,6 @@ object ApiFetcher {
                 width = width,
                 height = height
             )
-        }
-        if (info.domain != null && "pornhub" in info.domain!!) {
-
         }
         Log.d("Parser", "no media found for ${info.name}")
         val contentUrl = info.url

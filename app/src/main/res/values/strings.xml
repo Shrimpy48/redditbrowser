@@ -49,4 +49,5 @@
     <string name="menu_subreddit_box">subreddit</string>
     <string name="web_view_title">Use WebViews</string>
     <string name="nsfw">NSFW</string>
+    <string name="download">Download</string>
 </resources>

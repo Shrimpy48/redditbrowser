@@ -2,9 +2,11 @@ package com.example.redditbrowser.ui
 
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
+import com.example.redditbrowser.web.Downloader
 import com.example.redditbrowser.web.GlideApp
 import com.example.redditbrowser.web.HttpClientBuilder
 import com.google.android.exoplayer2.ExoPlayerFactory
@@ -73,7 +75,7 @@ class FullscreenPostActivity : AppCompatActivity() {
             else -> throw IllegalArgumentException("Invalid post type")
         }
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
 //        mVisible = true
 
@@ -96,6 +98,9 @@ class FullscreenPostActivity : AppCompatActivity() {
                     .placeholder(R.drawable.ic_image_black_24dp)
                     .error(R.drawable.ic_error_black_24dp)
                     .into(fullscreen_image)
+                fullscreen_dl_image.setOnClickListener {
+                    Downloader.download(this, intent.getStringExtra("url"))
+                }
             }
             Post.VIDEO -> {
                 player = ExoPlayerFactory.newSimpleInstance(this, DefaultTrackSelector())
@@ -109,6 +114,9 @@ class FullscreenPostActivity : AppCompatActivity() {
                 val mediaSource = ExtractorMediaSource.Factory(dataSource)
                     .createMediaSource(Uri.parse(intent.getStringExtra("url")))
                 player!!.prepare(mediaSource)
+                fullscreen_dl_video.setOnClickListener {
+                    Downloader.download(this, intent.getStringExtra("url"))
+                }
             }
             Post.VIDEO_DASH -> {
                 player = ExoPlayerFactory.newSimpleInstance(this, DefaultTrackSelector())
@@ -122,6 +130,9 @@ class FullscreenPostActivity : AppCompatActivity() {
                 val mediaSource = DashMediaSource.Factory(DefaultDashChunkSource.Factory(dataSource), dataSource)
                     .createMediaSource(Uri.parse(intent.getStringExtra("url")))
                 player!!.prepare(mediaSource)
+                fullscreen_dl_video.setOnClickListener {
+                    Toast.makeText(this, "Cannot download DASH video", Toast.LENGTH_SHORT).show()
+                }
             }
             else -> throw IllegalArgumentException("Invalid post type")
         }
