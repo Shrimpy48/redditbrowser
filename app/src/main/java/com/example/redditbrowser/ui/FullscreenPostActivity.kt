@@ -1,9 +1,14 @@
 package com.example.redditbrowser.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.web.Downloader
@@ -17,6 +22,7 @@ import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.activity_fullscreen_post_image.*
 import kotlinx.android.synthetic.main.activity_fullscreen_post_text.*
@@ -29,6 +35,8 @@ import kotlinx.android.synthetic.main.activity_fullscreen_post_video.*
 class FullscreenPostActivity : AppCompatActivity() {
 
     private var type = -1
+
+    private var pendingUrl = ""
 
 //    private val mHideHandler = Handler()
 //    private val mHidePart2Runnable = Runnable {
@@ -99,23 +107,28 @@ class FullscreenPostActivity : AppCompatActivity() {
                     .error(R.drawable.ic_error_black_24dp)
                     .into(fullscreen_image)
                 fullscreen_dl_image.setOnClickListener {
-                    Downloader.download(this, intent.getStringExtra("url"))
+                    download(intent.getStringExtra("url"))
                 }
             }
             Post.VIDEO -> {
                 player = ExoPlayerFactory.newSimpleInstance(this, DefaultTrackSelector())
                 fullscreen_video.player = player
                 player!!.playWhenReady = true
-                val dataSource = OkHttpDataSourceFactory(
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+                val useOkHttpExoPlayer = prefs.getBoolean("useOkHttpExoPlayer", true)
+                val dataSource = if (useOkHttpExoPlayer) OkHttpDataSourceFactory(
                     HttpClientBuilder.getClient(),
                     Util.getUserAgent(this, "RedditBrowser"),
                     DefaultBandwidthMeter()
+                ) else DefaultDataSourceFactory(
+                    this,
+                    Util.getUserAgent(this, "RedditBrowser")
                 )
                 val mediaSource = ExtractorMediaSource.Factory(dataSource)
                     .createMediaSource(Uri.parse(intent.getStringExtra("url")))
                 player!!.prepare(mediaSource)
                 fullscreen_dl_video.setOnClickListener {
-                    Downloader.download(this, intent.getStringExtra("url"))
+                    download(intent.getStringExtra("url"))
                 }
             }
             Post.VIDEO_DASH -> {
@@ -161,6 +174,33 @@ class FullscreenPostActivity : AppCompatActivity() {
         super.onDestroy()
         if (type == Post.VIDEO || type == Post.VIDEO_DASH) {
             if (player != null) player!!.release()
+        }
+    }
+
+    private fun download(url: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val permission =
+                this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    42
+                )
+                pendingUrl = url
+                return
+            }
+        }
+        Downloader.download(this, url)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        if (requestCode == 42 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            download(pendingUrl)
         }
     }
 

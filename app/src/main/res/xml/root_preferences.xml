@@ -53,6 +53,10 @@
                 app:key="useWebView"
                 app:title="@string/web_view_title"/>
 
+        <SwitchPreferenceCompat
+                app:key="useOkHttpExoPlayer"
+                app:title="@string/useOkHttpExoPlayer" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

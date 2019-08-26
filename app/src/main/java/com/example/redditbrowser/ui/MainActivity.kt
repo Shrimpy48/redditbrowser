@@ -35,6 +35,7 @@ import com.example.redditbrowser.web.GlideApp
 import com.example.redditbrowser.web.HttpClientBuilder
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_main.*
@@ -229,18 +230,22 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun initList() {
-        val glide = GlideApp.with(this@MainActivity)
-        val dataSource = OkHttpDataSourceFactory(
-            HttpClientBuilder.getClient(),
-            Util.getUserAgent(this, "RedditBrowser"),
-            DefaultBandwidthMeter()
-        )
-
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
 
         val showNsfw = prefs.getBoolean("showNsfw", false)
         val autoPlay = prefs.getBoolean("autoPlay", false)
         val useWebView = prefs.getBoolean("useWebView", false)
+        val useOkHttpExoPlayer = prefs.getBoolean("useOkHttpExoPlayer", true)
+
+        val glide = GlideApp.with(this@MainActivity)
+        val dataSource = if (useOkHttpExoPlayer) OkHttpDataSourceFactory(
+            HttpClientBuilder.getClient(),
+            Util.getUserAgent(this, "RedditBrowser"),
+            DefaultBandwidthMeter()
+        ) else DefaultDataSourceFactory(
+            this,
+            Util.getUserAgent(this, "RedditBrowser")
+        )
 
         val adapter = PostsAdapter(this, showNsfw, autoPlay, useWebView, glide, dataSource)
         list.adapter = adapter

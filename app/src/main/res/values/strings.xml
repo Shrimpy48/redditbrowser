@@ -50,4 +50,7 @@
     <string name="web_view_title">Use WebViews</string>
     <string name="nsfw">NSFW</string>
     <string name="download">Download</string>
+    <string name="useOkHttpExoPlayer">Use OkHttp for ExoPlayers</string>
+    <string name="download_channel_name">Downloads</string>
+    <string name="download_channel_description">Media download related notifications</string>
 </resources>
