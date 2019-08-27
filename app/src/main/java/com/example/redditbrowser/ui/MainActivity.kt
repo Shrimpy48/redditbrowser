@@ -2,11 +2,9 @@ package com.example.redditbrowser.ui
 
 import android.app.Application
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.util.Log
-import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -23,47 +21,33 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.paging.PagedList
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.redditbrowser.R
 import com.example.redditbrowser.apis.AuthValues
 import com.example.redditbrowser.datastructs.Feed
-import com.example.redditbrowser.datastructs.NetworkState
-import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.utils.ServiceProvider
-import com.example.redditbrowser.web.GlideApp
 import com.example.redditbrowser.web.HttpClientBuilder
-import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
-import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.android.exoplayer2.util.Util
 import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main.view.*
 import kotlinx.android.synthetic.main.app_bar_main.*
-import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.nav_header_main.view.*
 import okhttp3.Cache
-import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity(),
-    AdapterView.OnItemSelectedListener {
+    AdapterView.OnItemSelectedListener, PostListFragment.OnFragmentInteractionListener {
 
     companion object {
         const val DEFAULT_FEED = ""
         const val DEFAULT_FEED_TYPE = Feed.TYPE_FRONTPAGE
         const val DEFAULT_SORT = ""
         const val DEFAULT_PERIOD = ""
-        const val DEFAULT_COLS_LANDSCAPE = 3
-        const val DEFAULT_COLS_PORTRAIT = 1
-        const val DEFAULT_SPACING = 8f
     }
 
     private lateinit var feedModel: FeedViewModel
     private lateinit var navModel: NavViewModel
 
-    private var multis: ArrayList<String>? = null
-    private var subreddits: ArrayList<String>? = null
+    private var postListFragment: PostListFragment? = null
+    private var singlePostFragment: PostSingleFragment? = null
 
     private var username = AuthValues.redditUsername
 
@@ -117,9 +101,8 @@ class MainActivity : AppCompatActivity(),
         initTheme()
         feedModel = getFeedViewModel()
         navModel = getNavViewModel()
-        initList()
-        initSwipeToRefresh()
         initNavView(navView)
+        showListFragment()
         feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
         sort = savedInstanceState?.getString("sort") ?: DEFAULT_SORT
@@ -215,9 +198,11 @@ class MainActivity : AppCompatActivity(),
         outState.putInt("feedType", feedType)
         outState.putString("sort", sort)
         outState.putString("period", period)
-        outState.putStringArrayList("subreddits", subreddits)
-        outState.putStringArrayList("multis", multis)
         outState.putString("username", username)
+    }
+
+    override fun onListClicked(position: Int) {
+        showSingleFragment(position)
     }
 
     private fun getFeedViewModel(): FeedViewModel {
@@ -229,59 +214,21 @@ class MainActivity : AppCompatActivity(),
         return ViewModelProviders.of(this).get(NavViewModel::class.java)
     }
 
-    private fun initList() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-
-        val showNsfw = prefs.getBoolean("showNsfw", false)
-        val autoPlay = prefs.getBoolean("autoPlay", false)
-        val useWebView = prefs.getBoolean("useWebView", false)
-        val useOkHttpExoPlayer = prefs.getBoolean("useOkHttpExoPlayer", true)
-
-        val glide = GlideApp.with(this@MainActivity)
-        val dataSource = if (useOkHttpExoPlayer) OkHttpDataSourceFactory(
-            HttpClientBuilder.getClient(),
-            Util.getUserAgent(this, "RedditBrowser"),
-            DefaultBandwidthMeter()
-        ) else DefaultDataSourceFactory(
-            this,
-            Util.getUserAgent(this, "RedditBrowser")
-        )
-
-        val adapter = PostsAdapter(this, showNsfw, autoPlay, useWebView, glide, dataSource)
-        list.adapter = adapter
-        feedModel.posts.observe(this, Observer<PagedList<Post>> {
-            adapter.submitList(it)
-        })
-
-        val spansLandscapeStr = prefs.getString("landCols", null)
-        val spansPortraitStr = prefs.getString("portCols", null)
-
-        val spansLandscape = spansLandscapeStr?.toInt() ?: DEFAULT_COLS_LANDSCAPE
-        val spansPortrait = spansPortraitStr?.toInt() ?: DEFAULT_COLS_PORTRAIT
-
-        val spanCount: Int =
-            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) spansLandscape
-            else spansPortrait
-        (list.layoutManager as StaggeredGridLayoutManager).spanCount = spanCount
-
-        val spacingStr = prefs.getString("cardSpacing", null)
-        val spacing = spacingStr?.toFloat() ?: DEFAULT_SPACING
-
-        val spacingPx: Int = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            spacing,
-            resources.displayMetrics
-        ).roundToInt()
-        list.addItemDecoration(CardSpacer(spacingPx, spacingPx))
+    private fun showListFragment(position: Int = 0) {
+        if (postListFragment == null) postListFragment = PostListFragment()
+        postListFragment?.setPosition(position)
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        fragmentTransaction.replace(R.id.fragmentFrame, postListFragment!!)
+        fragmentTransaction.commit()
     }
 
-    private fun initSwipeToRefresh() {
-        feedModel.refreshState.observe(this, Observer {
-            swipe_refresh.isRefreshing = it == NetworkState.LOADING
-        })
-        swipe_refresh.setOnRefreshListener {
-            feedModel.refresh()
-        }
+    private fun showSingleFragment(position: Int) {
+        if (singlePostFragment == null) singlePostFragment = PostSingleFragment()
+        singlePostFragment?.setPosition(position)
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        fragmentTransaction.replace(R.id.fragmentFrame, singlePostFragment!!)
+        fragmentTransaction.addToBackStack(null)
+        fragmentTransaction.commit()
     }
 
     private fun initNavView(navView: NavigationView) {
@@ -368,12 +315,8 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-    private fun updateFeed(feed: String, feedType: Int, sort: String = "", period: String = "") {
-        if (feedModel.showFeed(Feed(feed, feedType, sort, period))) {
-//            list.scrollToPosition(0)  // This causes StaggeredGridLayoutManager to draw views offscreen due to a bug
-            (list.adapter as? PostsAdapter)?.submitList(null)
-        }
-    }
+    private fun updateFeed(feed: String, feedType: Int, sort: String = "", period: String = "") =
+        feedModel.showFeed(Feed(feed, feedType, sort, period))
 
     private fun showSettingsActivity() {
         val activity = this

@@ -4,7 +4,7 @@
                                                    xmlns:tools="http://schemas.android.com/tools"
                                                    android:layout_width="match_parent"
                                                    android:layout_height="match_parent"
-                                                   tools:context=".ui.FullscreenPostActivity"
+        tools:context=".ui.FullscreenPostActivityOld"
                                                    android:id="@+id/frameLayout2">
 
     <!-- The primary full-screen view. This can be replaced with whatever view

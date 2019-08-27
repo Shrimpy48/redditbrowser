@@ -32,7 +32,7 @@ import kotlinx.android.synthetic.main.activity_fullscreen_post_video.*
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-class FullscreenPostActivity : AppCompatActivity() {
+class FullscreenPostActivityOld : AppCompatActivity() {
 
     private var type = -1
 

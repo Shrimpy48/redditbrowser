@@ -17,7 +17,8 @@ class PostsAdapter(
     private val autoPlay: Boolean,
     private val useWebView: Boolean,
     private val glide: GlideRequests,
-    private val dataSource: DataSource.Factory
+    private val dataSource: DataSource.Factory,
+    private val clickCallback: (Int) -> Unit
 ) :
     PagedListAdapter<Post, RecyclerView.ViewHolder>(POST_COMPARATOR) {
 
@@ -33,9 +34,21 @@ class PostsAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (getItemViewType(position)) {
-            R.layout.text_post -> (holder as TextPostViewHolder).bind(getItem(position))
-            R.layout.image_post -> (holder as ImagePostViewHolder).bind(getItem(position))
-            R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position))
+            R.layout.text_post -> (holder as TextPostViewHolder).bind(getItem(position)) {
+                clickCallback(
+                    position
+                )
+            }
+            R.layout.image_post -> (holder as ImagePostViewHolder).bind(getItem(position)) {
+                clickCallback(
+                    position
+                )
+            }
+            R.layout.video_post -> (holder as VideoPostViewHolder).bind(getItem(position)) {
+                clickCallback(
+                    position
+                )
+            }
             R.layout.embed_post -> (holder as EmbedPostViewHolder).bind(getItem(position))
             R.layout.url_post -> (holder as UrlPostViewHolder).bind(getItem(position))
             R.layout.placeholder_post -> {

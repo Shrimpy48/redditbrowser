@@ -1,7 +1,6 @@
 package com.example.redditbrowser.web
 
 import android.content.Context
-import android.util.Log
 import com.bumptech.glide.Glide
 import com.bumptech.glide.GlideBuilder
 import com.bumptech.glide.Registry
@@ -18,7 +17,7 @@ import java.io.InputStream
 class MyGlideModule : AppGlideModule() {
     override fun applyOptions(context: Context, builder: GlideBuilder) {
         super.applyOptions(context, builder)
-        builder.setLogLevel(Log.DEBUG)
+//        builder.setLogLevel(Log.DEBUG)
         builder.apply {
             RequestOptions().diskCacheStrategy(DiskCacheStrategy.NONE)
                 .signature(ObjectKey(System.currentTimeMillis().toShort()))

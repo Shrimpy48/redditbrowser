@@ -1,7 +1,6 @@
 package com.example.redditbrowser.ui.viewholders
 
 import android.content.Context
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +8,6 @@ import android.view.ViewTreeObserver.OnPreDrawListener
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
-import com.example.redditbrowser.ui.FullscreenPostActivity
 import com.example.redditbrowser.web.GlideRequests
 import kotlinx.android.synthetic.main.image_post.view.*
 import kotlinx.android.synthetic.main.post_info.view.*
@@ -45,21 +43,21 @@ class ImagePostViewHolder(
         }
     }
 
-    fun bind(post: Post?) {
+    fun bind(post: Post?, clickCallback: () -> Unit) {
         this.post = post
         titleView.text = post?.title ?: context.getString(R.string.post_loading)
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 
-        if (post != null) showImage(post)
+        if (post != null) showImage(post, clickCallback)
     }
 
-    private fun showImage(post: Post) {
+    private fun showImage(post: Post, clickCallback: () -> Unit) {
         if (imageView.width == 0) {
             imageView.viewTreeObserver.addOnPreDrawListener(object : OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
                     imageView.viewTreeObserver.removeOnPreDrawListener(this)
-                    showImage(post)
+                    showImage(post, clickCallback)
                     return true // == allow drawing
                 }
             })
@@ -87,23 +85,8 @@ class ImagePostViewHolder(
                     .fitCenter()
                     .into(imageView)
             imageView.setOnClickListener {
-                showFullscreen()
+                clickCallback()
             }
-        }
-    }
-
-    private fun showFullscreen() {
-        if (post != null) {
-            val intent = Intent().apply {
-                setClass(context, FullscreenPostActivity::class.java)
-                putExtra("type", post!!.type)
-                putExtra("title", post!!.title)
-                putExtra("subreddit", post!!.subreddit)
-                putExtra("author", post!!.author)
-                putExtra("selftext", post!!.selftext)
-                putExtra("url", post!!.content)
-            }
-            context.startActivity(intent)
         }
     }
 

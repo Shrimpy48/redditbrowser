@@ -1,14 +1,12 @@
 package com.example.redditbrowser.ui.viewholders
 
 import android.content.Context
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
-import com.example.redditbrowser.ui.FullscreenPostActivity
 import kotlinx.android.synthetic.main.post_info.view.*
 import kotlinx.android.synthetic.main.text_post.view.*
 
@@ -29,7 +27,7 @@ class TextPostViewHolder(cardView: View, private val context: Context, private v
         }
     }
 
-    fun bind(post: Post?) {
+    fun bind(post: Post?, clickCallback: () -> Unit) {
         this.post = post
         titleView.text = post?.title ?: context.getString(R.string.post_loading)
         subredditView.text = post?.subreddit ?: ""
@@ -42,22 +40,7 @@ class TextPostViewHolder(cardView: View, private val context: Context, private v
 
         if (post != null)
             selftextView.setOnClickListener {
-                showFullscreen()
+                clickCallback()
             }
-    }
-
-    private fun showFullscreen() {
-        if (post != null) {
-            val intent = Intent().apply {
-                setClass(context, FullscreenPostActivity::class.java)
-                putExtra("type", post!!.type)
-                putExtra("title", post!!.title)
-                putExtra("subreddit", post!!.subreddit)
-                putExtra("author", post!!.author)
-                putExtra("selftext", post!!.selftext)
-                putExtra("url", post!!.content)
-            }
-            context.startActivity(intent)
-        }
     }
 }
