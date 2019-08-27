@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity(),
         periodSpinner.onItemSelectedListener = this
 
 
-        val cacheSize: Long = 150 * 1024 * 1024
+        val cacheSize: Long = 250 * 1024 * 1024  // 250 MiB
         HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
 
         initTheme()
