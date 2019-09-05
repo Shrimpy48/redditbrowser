@@ -14,16 +14,6 @@
             android:theme="@style/AppTheme"
             android:usesCleartextTraffic="true">
         <activity
-                android:name=".ui.FullscreenPostActivityOld"
-                android:configChanges="orientation|keyboardHidden|screenSize"
-                android:label="@string/title_activity_fullscreen_post"
-                android:parentActivityName=".ui.MainActivity"
-                android:theme="@style/NoActionBar">
-            <meta-data
-                    android:name="android.support.PARENT_ACTIVITY"
-                    android:value="com.example.redditbrowser.ui.MainActivity"/>
-        </activity>
-        <activity
                 android:name=".ui.SettingsActivity"
                 android:label="@string/title_activity_settings"
                 android:parentActivityName=".ui.MainActivity">

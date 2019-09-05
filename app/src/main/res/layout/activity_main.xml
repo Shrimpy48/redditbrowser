@@ -56,7 +56,6 @@
                           android:text="@string/menu_multis"
                           android:textAppearance="@style/NavHeading"/>
                 <View
-                        android:id="@+id/divider"
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="?android:attr/listDivider"
@@ -71,7 +70,6 @@
                           android:text="@string/menu_subscribed"
                           android:textAppearance="@style/NavHeading"/>
                 <View
-                        android:id="@+id/divider2"
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="?android:attr/listDivider"

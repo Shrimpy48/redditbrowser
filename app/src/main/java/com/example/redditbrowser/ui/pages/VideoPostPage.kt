@@ -1,14 +1,19 @@
 package com.example.redditbrowser.ui.pages
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
+import com.example.redditbrowser.web.Downloader
 import com.example.redditbrowser.web.HttpClientBuilder
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
@@ -25,6 +30,8 @@ class VideoPostPage : Fragment() {
 
     private var type: Int = -1
     private var content: String? = null
+
+    private var pendingUrl = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,7 +88,27 @@ class VideoPostPage : Fragment() {
                 }
             }
         }
+        view.download_button.setOnClickListener { download(content!!) }
         return view
+    }
+
+    private fun download(url: String) {
+        activity?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val permission =
+                    it.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                if (permission != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(
+                        it,
+                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        42
+                    )
+                    pendingUrl = url
+                    return
+                }
+            }
+            Downloader.download(it, url)
+        }
     }
 
     companion object {
