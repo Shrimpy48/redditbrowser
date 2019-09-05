@@ -6,7 +6,6 @@
         android:layout_height="match_parent"
         tools:context=".ui.PostListFragment">
 
-    <!-- TODO: Update blank fragment layout -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe_refresh"
             android:layout_width="match_parent"

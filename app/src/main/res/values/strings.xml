@@ -53,7 +53,4 @@
     <string name="useOkHttpExoPlayer">Use OkHttp for ExoPlayers</string>
     <string name="download_channel_name">Downloads</string>
     <string name="download_channel_description">Media download related notifications</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

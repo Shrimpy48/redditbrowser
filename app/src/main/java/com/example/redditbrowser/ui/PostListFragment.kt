@@ -32,6 +32,8 @@ import kotlin.math.roundToInt
 
 
 class PostListFragment : Fragment() {
+    private var startPosition: Int? = null
+
     private var listener: OnFragmentInteractionListener? = null
     private var feedModel: FeedViewModel? = null
 
@@ -122,6 +124,8 @@ class PostListFragment : Fragment() {
                 resources.displayMetrics
             ).roundToInt()
             list.addItemDecoration(CardSpacer(spacingPx, spacingPx))
+
+            list.scrollToPosition(startPosition ?: 0)
         }
     }
 
@@ -135,7 +139,15 @@ class PostListFragment : Fragment() {
     }
 
     fun setPosition(position: Int) {
-        list?.scrollToPosition(position)
+        startPosition = position
+        list?.scrollToPosition(startPosition!!)
+    }
+
+    fun getPosition(): Int {
+        val layoutManager = list.layoutManager as StaggeredGridLayoutManager
+        var array = IntArray(layoutManager.spanCount)
+        array = layoutManager.findFirstCompletelyVisibleItemPositions(array)
+        return array[0]
     }
 
     interface OnFragmentInteractionListener {

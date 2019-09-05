@@ -22,7 +22,6 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.example.redditbrowser.R
-import com.example.redditbrowser.apis.AuthValues
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.utils.ServiceProvider
 import com.example.redditbrowser.web.HttpClientBuilder
@@ -41,6 +40,10 @@ class MainActivity : AppCompatActivity(),
         const val DEFAULT_FEED_TYPE = Feed.TYPE_FRONTPAGE
         const val DEFAULT_SORT = ""
         const val DEFAULT_PERIOD = ""
+
+        const val LIST = 0
+        const val SINGLE = 1
+        const val DEFAULT_MODE = LIST
     }
 
     private lateinit var feedModel: FeedViewModel
@@ -49,12 +52,13 @@ class MainActivity : AppCompatActivity(),
     private var postListFragment: PostListFragment? = null
     private var singlePostFragment: PostSingleFragment? = null
 
-    private var username = AuthValues.redditUsername
-
     private var feed = DEFAULT_FEED
     private var feedType = DEFAULT_FEED_TYPE
     private var sort = DEFAULT_SORT
     private var period = DEFAULT_PERIOD
+
+    private var mode: Int = DEFAULT_MODE
+    private var position: Int = 0
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,20 +106,31 @@ class MainActivity : AppCompatActivity(),
         feedModel = getFeedViewModel()
         navModel = getNavViewModel()
         initNavView(navView)
-        showListFragment()
+
         feed = savedInstanceState?.getString("feed") ?: DEFAULT_FEED
         feedType = savedInstanceState?.getInt("feedType") ?: DEFAULT_FEED_TYPE
         sort = savedInstanceState?.getString("sort") ?: DEFAULT_SORT
         period = savedInstanceState?.getString("period") ?: DEFAULT_PERIOD
+
+        mode = savedInstanceState?.getInt("mode") ?: DEFAULT_MODE
+        position = savedInstanceState?.getInt("position") ?: 0
+        when (mode) {
+            LIST -> showListFragment(position)
+            SINGLE -> showSingleFragment(position)
+        }
+
         feedModel.showFeed(Feed(feed, feedType, sort, period))
     }
 
     override fun onBackPressed() {
         val drawerLayout: DrawerLayout = drawer_layout
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START)
-        } else {
-            super.onBackPressed()
+        when {
+            drawerLayout.isDrawerOpen(GravityCompat.START) -> drawerLayout.closeDrawer(GravityCompat.START)
+            mode == SINGLE -> {
+                position = singlePostFragment?.getPosition() ?: 0
+                showListFragment(position)
+            }
+            else -> super.onBackPressed()
         }
     }
 
@@ -198,7 +213,11 @@ class MainActivity : AppCompatActivity(),
         outState.putInt("feedType", feedType)
         outState.putString("sort", sort)
         outState.putString("period", period)
-        outState.putString("username", username)
+        outState.putInt("mode", mode)
+        position =
+            (if (mode == SINGLE) singlePostFragment?.getPosition() else postListFragment?.getPosition())
+                ?: 0
+        outState.putInt("position", position)
     }
 
     override fun onListClicked(position: Int) {
@@ -220,15 +239,16 @@ class MainActivity : AppCompatActivity(),
         val fragmentTransaction = supportFragmentManager.beginTransaction()
         fragmentTransaction.replace(R.id.fragmentFrame, postListFragment!!)
         fragmentTransaction.commit()
+        mode = LIST
     }
 
-    private fun showSingleFragment(position: Int) {
+    private fun showSingleFragment(position: Int = 0) {
         if (singlePostFragment == null) singlePostFragment = PostSingleFragment()
         singlePostFragment?.setPosition(position)
         val fragmentTransaction = supportFragmentManager.beginTransaction()
         fragmentTransaction.replace(R.id.fragmentFrame, singlePostFragment!!)
-        fragmentTransaction.addToBackStack(null)
         fragmentTransaction.commit()
+        mode = SINGLE
     }
 
     private fun initNavView(navView: NavigationView) {

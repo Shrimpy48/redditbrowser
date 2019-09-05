@@ -59,4 +59,6 @@ class PostSingleFragment : Fragment() {
         startPosition = position
         post_pager?.currentItem = startPosition!!
     }
+
+    fun getPosition(): Int = post_pager.currentItem
 }
