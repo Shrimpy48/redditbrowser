@@ -16,6 +16,8 @@ import kotlinx.android.synthetic.main.image_page.view.*
 class ImagePostPage : Fragment() {
 
     private var content: String? = null
+    private var title: String? = null
+    private var subreddit: String? = null
 
     private var pendingUrl = ""
 
@@ -23,6 +25,8 @@ class ImagePostPage : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             content = it.getString("content")
+            title = it.getString("title")
+            subreddit = it.getString("subreddit")
         }
     }
 
@@ -37,6 +41,8 @@ class ImagePostPage : Fragment() {
             .placeholder(R.drawable.ic_image_black_24dp)
             .error(R.drawable.ic_error_black_24dp)
             .into(view.image_view)
+        view.title_view.text = title
+        view.subreddit_view.text = subreddit
         registerForContextMenu(view.image_view)
         return view
     }
@@ -85,6 +91,8 @@ class ImagePostPage : Fragment() {
             return ImagePostPage().apply {
                 arguments = Bundle().apply {
                     putString("content", post.content)
+                    putString("title", post.title)
+                    putString("subreddit", post.subreddit)
                 }
             }
         }

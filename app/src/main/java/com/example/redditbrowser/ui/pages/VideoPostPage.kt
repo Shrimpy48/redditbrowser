@@ -30,6 +30,8 @@ class VideoPostPage : Fragment() {
 
     private var type: Int = -1
     private var content: String? = null
+    private var title: String? = null
+    private var subreddit: String? = null
 
     private var pendingUrl = ""
 
@@ -38,6 +40,8 @@ class VideoPostPage : Fragment() {
         arguments?.let {
             type = it.getInt("type")
             content = it.getString("content")
+            title = it.getString("title")
+            subreddit = it.getString("subreddit")
         }
     }
 
@@ -88,6 +92,8 @@ class VideoPostPage : Fragment() {
                 }
             }
         }
+        view.title_view.text = title
+        view.subreddit_view.text = subreddit
         view.download_button.setOnClickListener { download(content!!) }
         return view
     }
@@ -118,6 +124,8 @@ class VideoPostPage : Fragment() {
                 arguments = Bundle().apply {
                     putInt("type", post.type)
                     putString("content", post.content)
+                    putString("title", post.title)
+                    putString("subreddit", post.subreddit)
                 }
             }
         }

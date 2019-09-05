@@ -12,11 +12,15 @@ import kotlinx.android.synthetic.main.text_page.view.*
 class TextPostPage : Fragment() {
 
     private var selftext: String? = null
+    private var title: String? = null
+    private var subreddit: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             selftext = it.getString("selftext")
+            title = it.getString("title")
+            subreddit = it.getString("subreddit")
         }
     }
 
@@ -27,6 +31,8 @@ class TextPostPage : Fragment() {
     ): View? {
         val view = layoutInflater.inflate(R.layout.text_page, container, false)
         view.text_view.text = selftext
+        view.title_view.text = title
+        view.subreddit_view.text = subreddit
         return view
     }
 
@@ -36,6 +42,8 @@ class TextPostPage : Fragment() {
             return TextPostPage().apply {
                 arguments = Bundle().apply {
                     putString("selftext", post.selftext)
+                    putString("title", post.title)
+                    putString("subreddit", post.subreddit)
                 }
             }
         }
