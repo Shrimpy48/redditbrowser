@@ -1,6 +1,7 @@
 package com.example.redditbrowser.ui
 
 import android.os.Parcelable
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
@@ -33,9 +34,12 @@ class PostPagerAdapter(fragmentManager: FragmentManager, private val useWebView:
     }
 
     fun submitList(newList: PagedList<Post>) {
+        Log.d("Pager", "new list")
         list = newList
         notifyDataSetChanged()
     }
+
+    fun getPost(position: Int): Post? = list?.get(position)
 
     override fun getCount(): Int = list?.size ?: 0
 

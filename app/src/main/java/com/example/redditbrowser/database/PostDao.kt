@@ -12,7 +12,7 @@ interface PostDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(posts: List<Post>)
 
-    @Query("SELECT * FROM Post WHERE feed = :feed AND feedType = :feedType")
+    @Query("SELECT * FROM Post WHERE feed = :feed AND feedType = :feedType")  // TODO order by
     fun postsByFeed(feed: String, feedType: Int): DataSource.Factory<Int, Post>
 
     @Query("SELECT * FROM Post WHERE feed = :feed AND feedType = :feedType AND sort = :sort")

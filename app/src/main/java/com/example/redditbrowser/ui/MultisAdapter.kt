@@ -8,19 +8,20 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.redditbrowser.R
+import com.example.redditbrowser.datastructs.Multi
 import kotlinx.android.synthetic.main.nav_list_item.view.*
 
 
-class MultisAdapter(private val selectedCallback: (String) -> Unit) :
-    ListAdapter<String, MultisAdapter.ViewHolder>(COMPARATOR) {
+class MultisAdapter(private val selectedCallback: (Multi) -> Unit) :
+    ListAdapter<Multi, MultisAdapter.ViewHolder>(COMPARATOR) {
 
     companion object {
-        val COMPARATOR = object : DiffUtil.ItemCallback<String>() {
-            override fun areContentsTheSame(oldItem: String, newItem: String): Boolean =
+        val COMPARATOR = object : DiffUtil.ItemCallback<Multi>() {
+            override fun areContentsTheSame(oldItem: Multi, newItem: Multi): Boolean =
                 oldItem == newItem
 
-            override fun areItemsTheSame(oldItem: String, newItem: String): Boolean =
-                oldItem == newItem
+            override fun areItemsTheSame(oldItem: Multi, newItem: Multi): Boolean =
+                oldItem.name == newItem.name
         }
     }
 
@@ -34,7 +35,7 @@ class MultisAdapter(private val selectedCallback: (String) -> Unit) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val multi = getItem(position)
-        holder.textView.text = multi
+        holder.textView.text = multi.title
         holder.textView.setOnClickListener {
             selectedCallback(multi)
         }

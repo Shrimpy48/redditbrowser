@@ -69,10 +69,26 @@ class PostsAdapter(
         }
     }
 
+    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+        when (holder) {
+            is VideoPostViewHolder -> holder.play()
+            else -> super.onViewAttachedToWindow(holder)
+        }
+    }
+
+    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+        when (holder) {
+            is VideoPostViewHolder -> holder.pause()
+            else -> super.onViewDetachedFromWindow(holder)
+        }
+    }
+
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        super.onViewRecycled(holder)
-        if (holder.itemViewType == R.layout.video_post) (holder as VideoPostViewHolder).release()
-        else if (holder.itemViewType == R.layout.image_post) (holder as ImagePostViewHolder).clear()
+        when (holder) {
+            is VideoPostViewHolder -> holder.stop()
+            is ImagePostViewHolder -> holder.clear()
+            else -> super.onViewRecycled(holder)
+        }
     }
 
     override fun getItemViewType(position: Int): Int {

@@ -2,6 +2,7 @@ package com.example.redditbrowser.ui.viewholders
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,6 +24,7 @@ import kotlinx.android.synthetic.main.video_post.view.*
 class VideoPostViewHolder(
     cardView: View,
     private val context: Context,
+    private val player: SimpleExoPlayer,
     private val showNsfw: Boolean,
     private val autoPlay: Boolean,
     private val dataSourceFactory: DataSource.Factory
@@ -33,8 +35,6 @@ class VideoPostViewHolder(
     private val authorView = cardView.authorView
     private val videoView = cardView.videoView
     private val mediaLayout = cardView.mediaLayout
-
-    private var player: SimpleExoPlayer? = null
 
     private var post: Post? = null
 
@@ -48,7 +48,11 @@ class VideoPostViewHolder(
         ): VideoPostViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.video_post, parent, false)
-            return VideoPostViewHolder(view, context, showNsfw, autoPlay, factory)
+            val player = ExoPlayerFactory.newSimpleInstance(context, DefaultTrackSelector())
+            player.repeatMode = Player.REPEAT_MODE_ONE
+            view.videoView.player = player
+            Log.d("Lifecycle", "created video")
+            return VideoPostViewHolder(view, context, player, showNsfw, autoPlay, factory)
         }
     }
 
@@ -58,15 +62,12 @@ class VideoPostViewHolder(
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
 
-        if (post != null) {
-            if (player == null) {
-                player = ExoPlayerFactory.newSimpleInstance(context, DefaultTrackSelector())
-                player?.repeatMode = Player.REPEAT_MODE_ONE
-                videoView.player = player
-            }
+        player.volume = 0f
+        player.playWhenReady = false
 
+        Log.d("Lifecycle", "bound video to ${post?.title}")
+        if (post != null)
             showVideo(post, clickCallback)
-        }
     }
 
     private fun showVideo(post: Post, clickCallback: () -> Unit) {
@@ -96,9 +97,7 @@ class VideoPostViewHolder(
                     dataSourceFactory
                 ).createMediaSource(Uri.parse(post.content))
                 else ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(Uri.parse(post.content))
-                player?.volume = 0f
-                player?.playWhenReady = autoPlay
-                player?.prepare(mediaSource)
+                player.prepare(mediaSource)
             }
 
             mediaLayout.setOnClickListener {
@@ -107,10 +106,23 @@ class VideoPostViewHolder(
         }
     }
 
+    fun play() {
+        Log.d("Lifecycle", "playing ${post?.title}")
+        player.playWhenReady = autoPlay
+    }
+
+    fun pause() {
+        Log.d("Lifecycle", "paused ${post?.title}")
+        player.playWhenReady = false
+    }
+
+    fun stop() {
+        Log.d("Lifecycle", "stopped  ${post?.title}")
+        player.stop()
+    }
+
     fun release() {
-        if (player != null) {
-            player?.release()
-            player = null
-        }
+        Log.d("Lifecycle", "released video")
+        player.release()
     }
 }

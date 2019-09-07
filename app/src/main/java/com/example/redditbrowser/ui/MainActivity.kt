@@ -283,7 +283,7 @@ class MainActivity : AppCompatActivity(),
         }
 
         val multiAdapter = MultisAdapter { multi ->
-            feed = multi
+            feed = multi.name
             feedType = Feed.TYPE_MULTIREDDIT
             updateFeed(feed, feedType, sort, period)
         }
@@ -335,8 +335,10 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-    private fun updateFeed(feed: String, feedType: Int, sort: String = "", period: String = "") =
+    private fun updateFeed(feed: String, feedType: Int, sort: String = "", period: String = "") {
+        if (mode == SINGLE) showListFragment()
         feedModel.showFeed(Feed(feed, feedType, sort, period))
+    }
 
     private fun showSettingsActivity() {
         val activity = this

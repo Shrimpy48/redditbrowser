@@ -8,6 +8,7 @@ import com.example.redditbrowser.apis.services.GfyApiService
 import com.example.redditbrowser.apis.services.ImgurApiService
 import com.example.redditbrowser.apis.services.RedditApiService
 import com.example.redditbrowser.datastructs.Feed
+import com.example.redditbrowser.datastructs.Multi
 import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.web.HttpClientBuilder
 import kotlinx.coroutines.*
@@ -776,7 +777,7 @@ object ApiFetcher {
         Page(processed, before, newAfter, newCount)
     }
 
-    suspend fun getMyMultis(): List<String> = withContext(Dispatchers.IO) {
+    suspend fun getMyMultis(): List<Multi> = withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -785,7 +786,7 @@ object ApiFetcher {
         val res = reddit!!.getMyMultis()
         if (!res.isSuccessful) throw Exception("Unable to fetch multis")
         val multis = res.body()!!
-        multis.map { info -> info.data?.displayName!! }
+        multis.map { info -> Multi(info.data?.name!!, info.data?.displayName!!) }
     }
 
     suspend fun getMySubscribedSubreddits(limit: Int): Page<String> = withContext(Dispatchers.IO) {
@@ -932,9 +933,9 @@ object ApiFetcher {
         }
     }
 
-    fun getMyMultis(listener: Listener<List<String>>) {
+    fun getMyMultis(listener: Listener<List<Multi>>) {
         CoroutineScope(Dispatchers.Main).launch {
-            val res: List<String>? = try {
+            val res: List<Multi>? = try {
                 getMyMultis()
             } catch (t: Throwable) {
                 listener.onFailure(t)

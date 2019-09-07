@@ -18,6 +18,8 @@ import kotlinx.android.synthetic.main.fragment_post_single.view.*
 class PostSingleFragment : Fragment() {
     private var startPosition: Int? = null
 
+    private lateinit var adapter: PostPagerAdapter
+
     private var feedModel: FeedViewModel? = null
 
     override fun onCreateView(
@@ -26,15 +28,8 @@ class PostSingleFragment : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_post_single, container, false)
-        activity?.let { activity ->
-            val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
-            val useWebView = prefs.getBoolean("useWebView", false)
-            view.post_pager.adapter = PostPagerAdapter(childFragmentManager, useWebView)
-            feedModel?.posts?.observe(
-                this,
-                Observer { (view.post_pager.adapter as PostPagerAdapter).submitList(it) })
-            view.post_pager.currentItem = startPosition ?: 0
-        }
+        view.post_pager.adapter = adapter
+        view.post_pager.currentItem = startPosition ?: 0 // Doesn't work until onResume
         return view
     }
 
@@ -43,9 +38,22 @@ class PostSingleFragment : Fragment() {
         post_pager.currentItem = startPosition ?: 0
     }
 
+    override fun onPause() {
+        super.onPause()
+        startPosition = getPosition()
+    }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         feedModel = getFeedViewModel()
+        val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
+        val useWebView = prefs.getBoolean("useWebView", false)
+        adapter = PostPagerAdapter(childFragmentManager, useWebView)
+        feedModel?.posts?.observe(
+            this,
+            Observer {
+                adapter.submitList(it)
+            })
     }
 
     private fun getFeedViewModel(): FeedViewModel? = activity?.run {
@@ -57,7 +65,7 @@ class PostSingleFragment : Fragment() {
 
     fun setPosition(position: Int) {
         startPosition = position
-        post_pager?.currentItem = startPosition!!
+        post_pager?.currentItem = position
     }
 
     fun getPosition(): Int = post_pager.currentItem

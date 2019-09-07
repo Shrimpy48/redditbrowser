@@ -1,6 +1,7 @@
 package com.example.redditbrowser.ui.pages
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -15,9 +16,12 @@ import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Post
 import com.example.redditbrowser.web.Downloader
 import com.example.redditbrowser.web.HttpClientBuilder
+import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ExoPlayerFactory
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
 import com.google.android.exoplayer2.source.ExtractorMediaSource
+import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
@@ -27,6 +31,11 @@ import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.video_page.view.*
 
 class VideoPostPage : Fragment() {
+
+    private var player: ExoPlayer? = null
+    private lateinit var mediaSource: MediaSource
+
+    private var useOkHttpExoPlayer = true
 
     private var type: Int = -1
     private var content: String? = null
@@ -45,6 +54,14 @@ class VideoPostPage : Fragment() {
         }
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        player = ExoPlayerFactory.newSimpleInstance(context, DefaultTrackSelector())
+        player?.repeatMode = Player.REPEAT_MODE_ONE
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        useOkHttpExoPlayer = prefs.getBoolean("useOkHttpExoPlayer", true)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -54,41 +71,34 @@ class VideoPostPage : Fragment() {
         when (type) {
             Post.VIDEO -> {
                 activity?.let {
-                    val player = ExoPlayerFactory.newSimpleInstance(it, DefaultTrackSelector())
                     view.video_view.player = player
-                    player.playWhenReady = true
-                    val prefs = PreferenceManager.getDefaultSharedPreferences(it)
-                    val useOkHttpExoPlayer = prefs.getBoolean("useOkHttpExoPlayer", true)
                     val dataSource = if (useOkHttpExoPlayer) OkHttpDataSourceFactory(
                         HttpClientBuilder.getClient(),
                         Util.getUserAgent(it, "RedditBrowser"),
                         DefaultBandwidthMeter()
                     ) else DefaultDataSourceFactory(
-                        activity,
-                        Util.getUserAgent(activity, "RedditBrowser")
+                        it,
+                        Util.getUserAgent(it, "RedditBrowser")
                     )
-                    val mediaSource = ExtractorMediaSource.Factory(dataSource)
+                    mediaSource = ExtractorMediaSource.Factory(dataSource)
                         .createMediaSource(Uri.parse(content))
-                    player.prepare(mediaSource)
                 }
             }
             Post.VIDEO_DASH -> {
                 activity?.let {
-                    val player = ExoPlayerFactory.newSimpleInstance(it, DefaultTrackSelector())
+                    player = ExoPlayerFactory.newSimpleInstance(it, DefaultTrackSelector())
                     view.video_view.player = player
-                    player.playWhenReady = true
                     val dataSource = OkHttpDataSourceFactory(
                         HttpClientBuilder.getClient(),
                         Util.getUserAgent(it, "RedditBrowser"),
                         DefaultBandwidthMeter()
                     )
-                    val mediaSource =
+                    mediaSource =
                         DashMediaSource.Factory(
                             DefaultDashChunkSource.Factory(dataSource),
                             dataSource
                         )
                             .createMediaSource(Uri.parse(content))
-                    player.prepare(mediaSource)
                 }
             }
         }
@@ -96,6 +106,32 @@ class VideoPostPage : Fragment() {
         view.subreddit_view.text = subreddit
         view.download_button.setOnClickListener { download(content!!) }
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        player?.playWhenReady = false
+        player?.prepare(mediaSource)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        player?.playWhenReady = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        player?.playWhenReady = false
+    }
+
+    override fun onStop() {
+        super.onStop()
+        player?.stop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player?.release()
     }
 
     private fun download(url: String) {
