@@ -21,9 +21,10 @@ class PostRepository(
 
     private val networkPageSize = 10
 
-    private fun insertResultIntoDb(feed: Feed, res: List<Post>) {
+    private fun insertResultIntoDb(feed: Feed, res: List<Post>, startpos: Int) {
         db.runInTransaction {
-            db.posts().insert(res.map { post ->
+            db.posts().insert(res.mapIndexed { pos, post ->
+                post.position = startpos + pos
                 post.feed = feed.feed
                 post.feedType = feed.feedType
                 post.sort = feed.sort
@@ -42,7 +43,7 @@ class PostRepository(
                 executor.execute {
                     db.runInTransaction {
                         db.posts().deleteByFeed(feed.feed, feed.feedType, feed.sort, feed.period)
-                        insertResultIntoDb(feed, result.items)
+                        insertResultIntoDb(feed, result.items, 0)
                     }
 
                     networkState.postValue(NetworkState.LOADED)

@@ -19,6 +19,7 @@ data class Post(
     val width: Int? = null,
     val height: Int? = null
 ) {
+    var position = 0
     var feed = ""
     var feedType = -1
     var sort: String = ""

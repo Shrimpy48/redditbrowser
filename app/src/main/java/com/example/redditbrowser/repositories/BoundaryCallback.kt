@@ -10,7 +10,7 @@ import java.util.concurrent.Executor
 class BoundaryCallback(
     private val feed: Feed,
     private val pageSize: Int,
-    private val handleResponse: (Feed, List<Post>) -> Unit,
+    private val handleResponse: (Feed, List<Post>, Int) -> Unit,
     private val executor: Executor
 ) : PagedList.BoundaryCallback<Post>() {
 
@@ -55,7 +55,7 @@ class BoundaryCallback(
 
     private fun insertItemsIntoDb(resp: List<Post>, it: PagingRequestHelper.Request.Callback) {
         executor.execute {
-            handleResponse(feed, resp)
+            handleResponse(feed, resp, count - resp.size)
             it.recordSuccess()
         }
     }

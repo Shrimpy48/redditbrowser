@@ -15,7 +15,7 @@
 
         <TextView
                 android:id="@+id/title_view"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintEnd_toStartOf="@+id/subreddit_view"
                 app:layout_constraintHorizontal_bias="0.0"
@@ -24,14 +24,14 @@
 
         <TextView
                 android:id="@+id/subreddit_view"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintEnd_toStartOf="@+id/download_button"
                 app:layout_constraintTop_toTopOf="parent" />
 
         <ImageButton
                 android:id="@+id/download_button"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/subreddit_view"

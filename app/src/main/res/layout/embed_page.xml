@@ -19,27 +19,23 @@
 
         <TextView
                 android:id="@+id/title_view"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintEnd_toStartOf="@+id/subreddit_view"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_conversion_absoluteHeight="19dp"
-                tools:layout_conversion_absoluteWidth="0dp"
-                tools:layout_editor_absoluteX="0dp"
-                tools:layout_editor_absoluteY="0dp" />
+                tools:layout_conversion_absoluteWidth="0dp" />
 
         <TextView
                 android:id="@+id/subreddit_view"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:layout_conversion_absoluteHeight="19dp"
-                tools:layout_conversion_absoluteWidth="0dp"
-                tools:layout_editor_absoluteX="411dp"
-                tools:layout_editor_absoluteY="0dp" />
+                tools:layout_conversion_absoluteWidth="0dp" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <WebView
