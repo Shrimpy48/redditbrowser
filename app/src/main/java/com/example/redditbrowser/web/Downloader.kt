@@ -4,7 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import android.os.Environment
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.redditbrowser.R
@@ -12,7 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.Request
-import okio.Okio
+import okio.buffer
+import okio.sink
 import java.io.File
 
 
@@ -28,12 +28,12 @@ object Downloader {
                 val filename = urlStr.substringAfterLast("/")
                 val request = Request.Builder().url(urlStr).build()
                 val response = HttpClientBuilder.getClient().newCall(request).execute()
-                response.body()?.let {
+                response.body?.let {
                     val downloadedFile = File(
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                        context.getExternalFilesDir(null),
                         filename
                     )
-                    val sink = Okio.buffer(Okio.sink(downloadedFile))
+                    val sink = downloadedFile.sink().buffer()
                     sink.writeAll(it.source())
                     sink.close()
                     makeNotif(context, "$filename downloaded")

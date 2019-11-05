@@ -258,7 +258,7 @@ object ApiFetcher {
             Log.d("Parser", "Failed to fetch HTML")
             return null
         }
-        return response.body()?.string()
+        return response.body?.string()
     }
 
     private suspend fun scrapeUrl(

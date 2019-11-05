@@ -3,13 +3,13 @@ package com.example.redditbrowser.ui
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.preference.PreferenceManager
 import com.example.redditbrowser.R
 import com.example.redditbrowser.utils.ServiceProvider
 import kotlinx.android.synthetic.main.fragment_post_single.*

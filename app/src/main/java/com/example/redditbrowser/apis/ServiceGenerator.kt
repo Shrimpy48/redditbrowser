@@ -78,10 +78,10 @@ object ServiceGenerator {
 
     fun getRedditAuthService(): RedditAuthApiService {
         var needsBuilding = false
-        if (!redditAuthClient.interceptors().contains(redditAgentInterceptor)) {
+        if (!redditAuthClient.interceptors.contains(redditAgentInterceptor)) {
             needsBuilding = true
         }
-        if (!redditAuthClient.interceptors().contains(redditAuthInterceptor)) {
+        if (!redditAuthClient.interceptors.contains(redditAuthInterceptor)) {
             needsBuilding = true
         }
 
@@ -105,7 +105,7 @@ object ServiceGenerator {
 
     fun getRedditService(token: String): RedditApiService {
         var needsBuilding = false
-        if (!redditClient.interceptors().contains(redditAgentInterceptor)) {
+        if (!redditClient.interceptors.contains(redditAgentInterceptor)) {
             needsBuilding = true
         }
 
@@ -115,7 +115,7 @@ object ServiceGenerator {
             redditToken = token
         }
 
-        if (!redditClient.interceptors().contains(redditTokenAuthInterceptor)) {
+        if (!redditClient.interceptors.contains(redditTokenAuthInterceptor)) {
             needsBuilding = true
         }
 
@@ -140,7 +140,7 @@ object ServiceGenerator {
     fun getImgurService(): ImgurApiService {
         var needsBuilding = false
 
-        if (!imgurClient.interceptors().contains(imgurAuthInterceptor)) {
+        if (!imgurClient.interceptors.contains(imgurAuthInterceptor)) {
             needsBuilding = true
         }
 
@@ -175,7 +175,7 @@ object ServiceGenerator {
             gfyToken = token
         }
 
-        if (!gfyClient.interceptors().contains(gfyTokenAuthInterceptor)) {
+        if (!gfyClient.interceptors.contains(gfyTokenAuthInterceptor)) {
             needsBuilding = true
         }
 
