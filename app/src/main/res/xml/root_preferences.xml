@@ -43,12 +43,6 @@
                 android:numeric="integer"
                 android:inputType="number"/>
 
-        <EditTextPreference
-                app:key="cardSpacing"
-                app:title="@string/card_spacing_title"
-                android:numeric="decimal"
-                android:inputType="numberDecimal"/>
-
         <SwitchPreferenceCompat
                 app:key="useWebView"
                 app:title="@string/web_view_title"/>

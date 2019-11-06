@@ -83,7 +83,6 @@ class PostListFragment : Fragment() {
             val useOkHttpExoPlayer = prefs.getBoolean("useOkHttpExoPlayer", true)
             val spansLandscapeStr = prefs.getString("landCols", null)
             val spansPortraitStr = prefs.getString("portCols", null)
-            val spacingStr = prefs.getString("cardSpacing", null)
 
             val glide = GlideApp.with(activity)
             val dataSource = if (useOkHttpExoPlayer) OkHttpDataSourceFactory(
@@ -116,11 +115,9 @@ class PostListFragment : Fragment() {
                 else spansPortrait
             (list.layoutManager as StaggeredGridLayoutManager).spanCount = spanCount
 
-            val spacing = spacingStr?.toFloat() ?: DEFAULT_SPACING
-
             val spacingPx: Int = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                spacing,
+                SPACING,
                 resources.displayMetrics
             ).roundToInt()
             list.addItemDecoration(CardSpacer(spacingPx, spacingPx))
@@ -157,6 +154,6 @@ class PostListFragment : Fragment() {
     companion object {
         const val DEFAULT_COLS_LANDSCAPE = 3
         const val DEFAULT_COLS_PORTRAIT = 1
-        const val DEFAULT_SPACING = 8f
+        const val SPACING = 4f
     }
 }
