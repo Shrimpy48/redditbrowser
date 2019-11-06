@@ -34,13 +34,11 @@
         <EditTextPreference
                 app:key="landCols"
                 app:title="@string/land_cols_title"
-                android:numeric="integer"
                 android:inputType="number"/>
 
         <EditTextPreference
                 app:key="portCols"
                 app:title="@string/port_cols_title"
-                android:numeric="integer"
                 android:inputType="number"/>
 
         <SwitchPreferenceCompat

@@ -39,8 +39,6 @@ class PostPagerAdapter(fragmentManager: FragmentManager, private val useWebView:
         notifyDataSetChanged()
     }
 
-    fun getPost(position: Int): Post? = list?.get(position)
-
     override fun getCount(): Int = list?.size ?: 0
 
     override fun saveState(): Parcelable? {

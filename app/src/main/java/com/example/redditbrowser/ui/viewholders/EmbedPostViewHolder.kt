@@ -1,5 +1,6 @@
 package com.example.redditbrowser.ui.viewholders
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -41,6 +42,7 @@ class EmbedPostViewHolder(
         if (post != null) showEmbed(post)
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private fun showEmbed(post: Post) {
         if (embedView.width == 0) {
             embedView.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {

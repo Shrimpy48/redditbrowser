@@ -1,6 +1,9 @@
 package com.example.redditbrowser.apis.services
 
-import com.example.redditbrowser.apis.responses.*
+import com.example.redditbrowser.apis.responses.MultiInfoWrapperBasic
+import com.example.redditbrowser.apis.responses.PostInfoListWrapper
+import com.example.redditbrowser.apis.responses.SelfInfo
+import com.example.redditbrowser.apis.responses.SubredditInfoListWrapper
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -10,15 +13,6 @@ interface RedditApiService {
 
     @GET("api/v1/me?raw_json=1")
     suspend fun getMyInfo(): Response<SelfInfo>
-
-    @GET("subreddits/mine/subscriber?raw_json=1")
-    suspend fun getMySubscribedSubreddits(): Response<SubredditInfoListWrapper>
-
-    @GET("subreddits/mine/subscriber?raw_json=1")
-    suspend fun getMySubscribedSubreddits(
-        @Query("after") after: String?,
-        @Query("count") count: Int
-    ): Response<SubredditInfoListWrapper>
 
     @GET("subreddits/mine/subscriber?raw_json=1")
     suspend fun getMySubscribedSubreddits(@Query("limit") limit: Int): Response<SubredditInfoListWrapper>
@@ -32,9 +26,6 @@ interface RedditApiService {
 
     @GET("api/multi/mine?raw_json=1")
     suspend fun getMyMultis(): Response<List<MultiInfoWrapperBasic>>
-
-    @GET("api/multi/mine?expand_srs=true?raw_json=1")
-    suspend fun getMyMultisFull(): Response<List<MultiInfoWrapper>>
 
     @GET("/?raw_json=1")
     suspend fun getMyFrontPagePosts(@Query("limit") limit: Int): Response<PostInfoListWrapper>

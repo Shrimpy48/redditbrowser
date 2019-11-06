@@ -63,7 +63,7 @@ class PostsAdapter(
             R.layout.image_post -> ImagePostViewHolder.create(parent, context, showNsfw, autoPlay, glide)
             R.layout.video_post -> VideoPostViewHolder.create(parent, context, showNsfw, autoPlay, dataSource)
             R.layout.embed_post -> EmbedPostViewHolder.create(parent, context, showNsfw)
-            R.layout.url_post -> UrlPostViewHolder.create(parent, context, showNsfw)
+            R.layout.url_post -> UrlPostViewHolder.create(parent, context)
             R.layout.placeholder_post -> PlaceholderPostViewHolder.create(parent)
             else -> throw IllegalArgumentException("unknown view type $viewType")
         }

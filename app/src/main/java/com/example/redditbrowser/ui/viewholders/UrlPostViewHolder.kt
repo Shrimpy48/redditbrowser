@@ -10,7 +10,7 @@ import com.example.redditbrowser.datastructs.Post
 import kotlinx.android.synthetic.main.post_info.view.*
 import kotlinx.android.synthetic.main.url_post.view.*
 
-class UrlPostViewHolder(cardView: View, private val context: Context, private val showNsfw: Boolean) :
+class UrlPostViewHolder(cardView: View, private val context: Context) :
     RecyclerView.ViewHolder(cardView) {
     private val titleView = cardView.titleView
     private val subredditView = cardView.subredditView
@@ -20,10 +20,10 @@ class UrlPostViewHolder(cardView: View, private val context: Context, private va
     private var post: Post? = null
 
     companion object {
-        fun create(parent: ViewGroup, context: Context, showNsfw: Boolean): UrlPostViewHolder {
+        fun create(parent: ViewGroup, context: Context): UrlPostViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.url_post, parent, false)
-            return UrlPostViewHolder(view, context, showNsfw)
+            return UrlPostViewHolder(view, context)
         }
     }
 

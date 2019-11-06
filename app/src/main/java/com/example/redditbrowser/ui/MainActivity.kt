@@ -3,7 +3,6 @@ package com.example.redditbrowser.ui
 import android.app.Application
 import android.content.Intent
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
@@ -21,6 +20,7 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.preference.PreferenceManager
 import com.example.redditbrowser.R
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.utils.ServiceProvider

@@ -22,7 +22,6 @@
     <string name="posts_header">Post Settings</string>
     <string name="land_cols_title">Number of columns (landscape)</string>
     <string name="port_cols_title">Number of columns (portrait)</string>
-    <string name="card_spacing_title">Spacing between cards</string>
     <string name="show_nsfw_title">Show NSFW post content</string>
     <string name="post_loading">Loading…</string>
     <string name="auto_play_title">Play videos automatically</string>

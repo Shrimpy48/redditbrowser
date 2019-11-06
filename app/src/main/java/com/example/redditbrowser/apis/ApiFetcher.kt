@@ -640,7 +640,7 @@ object ApiFetcher {
         )
     }
 
-    suspend fun getMyFrontPagePosts(sort: String, period: String, limit: Int): Page<Post> =
+    private suspend fun getMyFrontPagePosts(sort: String, period: String, limit: Int): Page<Post> =
         withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
@@ -660,7 +660,7 @@ object ApiFetcher {
             Page(processed, before, after, count)
     }
 
-    suspend fun getMyFrontPagePosts(
+    private suspend fun getMyFrontPagePosts(
         sort: String,
         period: String,
         after: String?,
@@ -685,7 +685,12 @@ object ApiFetcher {
         Page(processed, before, newAfter, newCount)
     }
 
-    suspend fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int): Page<Post> =
+    private suspend fun getMyMultiPosts(
+        name: String,
+        sort: String,
+        period: String,
+        limit: Int
+    ): Page<Post> =
         withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
@@ -705,7 +710,7 @@ object ApiFetcher {
             Page(processed, before, after, count)
     }
 
-    suspend fun getMyMultiPosts(
+    private suspend fun getMyMultiPosts(
         name: String,
         sort: String,
         period: String,
@@ -731,7 +736,12 @@ object ApiFetcher {
         Page(processed, before, newAfter, newCount)
     }
 
-    suspend fun getSubredditPosts(name: String, sort: String, period: String, limit: Int): Page<Post> =
+    private suspend fun getSubredditPosts(
+        name: String,
+        sort: String,
+        period: String,
+        limit: Int
+    ): Page<Post> =
         withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
@@ -751,7 +761,7 @@ object ApiFetcher {
             Page(processed, before, after, count)
     }
 
-    suspend fun getSubredditPosts(
+    private suspend fun getSubredditPosts(
         name: String,
         sort: String,
         period: String,
@@ -789,7 +799,8 @@ object ApiFetcher {
         multis.map { info -> Multi(info.data?.name!!, info.data?.displayName!!) }
     }
 
-    suspend fun getMySubscribedSubreddits(limit: Int): Page<String> = withContext(Dispatchers.IO) {
+    private suspend fun getMySubscribedSubreddits(limit: Int): Page<String> =
+        withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
         redditServiceMutex.withLock {
@@ -805,7 +816,11 @@ object ApiFetcher {
         Page(names, before, after, count)
     }
 
-    suspend fun getMySubscribedSubreddits(after: String?, count: Int, limit: Int): Page<String> =
+    private suspend fun getMySubscribedSubreddits(
+        after: String?,
+        count: Int,
+        limit: Int
+    ): Page<String> =
         withContext(Dispatchers.IO) {
         val token = getRedditToken()
         var reddit: RedditApiService? = null
@@ -833,12 +848,17 @@ object ApiFetcher {
         res.body()!!
     }
 
-    suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
+    private suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
         map { async { f(it) } }.map { it.await() }
     }
 
 
-    fun getMyFrontPagePosts(sort: String, period: String, limit: Int, listener: Listener<Page<Post>>) {
+    private fun getMyFrontPagePosts(
+        sort: String,
+        period: String,
+        limit: Int,
+        listener: Listener<Page<Post>>
+    ) {
         CoroutineScope(Dispatchers.Main).launch {
             val res = try {
                 getMyFrontPagePosts(sort, period, limit)
@@ -850,7 +870,7 @@ object ApiFetcher {
         }
     }
 
-    fun getMyFrontPagePosts(
+    private fun getMyFrontPagePosts(
         sort: String,
         period: String,
         after: String?,
@@ -869,7 +889,13 @@ object ApiFetcher {
         }
     }
 
-    fun getMyMultiPosts(name: String, sort: String, period: String, limit: Int, listener: Listener<Page<Post>>) {
+    private fun getMyMultiPosts(
+        name: String,
+        sort: String,
+        period: String,
+        limit: Int,
+        listener: Listener<Page<Post>>
+    ) {
         CoroutineScope(Dispatchers.Main).launch {
             val res = try {
                 getMyMultiPosts(name, sort, period, limit)
@@ -881,7 +907,7 @@ object ApiFetcher {
         }
     }
 
-    fun getMyMultiPosts(
+    private fun getMyMultiPosts(
         name: String,
         sort: String,
         period: String,
@@ -901,7 +927,13 @@ object ApiFetcher {
         }
     }
 
-    fun getSubredditPosts(name: String, sort: String, period: String, limit: Int, listener: Listener<Page<Post>>) {
+    private fun getSubredditPosts(
+        name: String,
+        sort: String,
+        period: String,
+        limit: Int,
+        listener: Listener<Page<Post>>
+    ) {
         CoroutineScope(Dispatchers.Main).launch {
             val res = try {
                 getSubredditPosts(name, sort, period, limit)
@@ -913,7 +945,7 @@ object ApiFetcher {
         }
     }
 
-    fun getSubredditPosts(
+    private fun getSubredditPosts(
         name: String,
         sort: String,
         period: String,
@@ -925,18 +957,6 @@ object ApiFetcher {
         CoroutineScope(Dispatchers.Main).launch {
             val res = try {
                 getSubredditPosts(name, sort, period, after, count, limit)
-            } catch (t: Throwable) {
-                listener.onFailure(t)
-                null
-            }
-            if (res != null) listener.onComplete(res)
-        }
-    }
-
-    fun getMyMultis(listener: Listener<List<Multi>>) {
-        CoroutineScope(Dispatchers.Main).launch {
-            val res: List<Multi>? = try {
-                getMyMultis()
             } catch (t: Throwable) {
                 listener.onFailure(t)
                 null
@@ -961,18 +981,6 @@ object ApiFetcher {
         CoroutineScope(Dispatchers.Main).launch {
             val res = try {
                 getMySubscribedSubreddits(after, count, limit)
-            } catch (t: Throwable) {
-                listener.onFailure(t)
-                null
-            }
-            if (res != null) listener.onComplete(res)
-        }
-    }
-
-    fun getMyInfo(listener: Listener<SelfInfo>) {
-        CoroutineScope(Dispatchers.Main).launch {
-            val res: SelfInfo? = try {
-                getMyInfo()
             } catch (t: Throwable) {
                 listener.onFailure(t)
                 null

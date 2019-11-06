@@ -121,8 +121,4 @@ class VideoPostViewHolder(
         player.stop()
     }
 
-    fun release() {
-        Log.d("Lifecycle", "released video")
-        player.release()
-    }
 }

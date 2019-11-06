@@ -31,7 +31,7 @@ class FeedViewModel(private val repository: PostRepository) : ViewModel() {
         return true
     }
 
-    fun currentFeed() = feedData.value
+    private fun currentFeed() = feedData.value
 
 
     class Factory(private val repository: PostRepository) : ViewModelProvider.Factory {
