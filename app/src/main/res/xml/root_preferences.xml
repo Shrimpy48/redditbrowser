@@ -26,6 +26,11 @@
                 app:entries="@array/themeNames"
                 app:entryValues="@array/themeValues"/>
 
+        <EditTextPreference
+                app:key="accountName"
+                app:title="@string/account_name_title"
+                android:inputType="text" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

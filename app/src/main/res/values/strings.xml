@@ -51,4 +51,5 @@
     <string name="useOkHttpExoPlayer">Use OkHttp for ExoPlayers</string>
     <string name="download_channel_name">Downloads</string>
     <string name="download_channel_description">Media download related notifications</string>
+    <string name="account_name_title">Reddit Username</string>
 </resources>

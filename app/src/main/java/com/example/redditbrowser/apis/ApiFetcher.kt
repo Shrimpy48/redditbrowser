@@ -42,13 +42,22 @@ object ApiFetcher {
     private val imgurServiceMutex = Mutex()
     private val gfyServiceMutex = Mutex()
 
+    private var username = ""
+    private var password = ""
+
+    fun setCredentials(name: String?) {
+        if (name in AuthValues.redditCredentials) {
+            username = name!!
+            password = AuthValues.redditCredentials.getValue(name)
+        }
+    }
 
     private suspend fun getRedditToken(): String {
         redditMutex.withLock {
             if (redditToken != null && System.currentTimeMillis() < redditExpireTime!!) {
                 return redditToken!!
             }
-            val authResp = redditAuth.getAuth("password", AuthValues.redditUsername, AuthValues.redditPassword)
+            val authResp = redditAuth.getAuth("password", username, password)
             return if (authResp.isSuccessful) {
                 redditToken = authResp.body()?.accessToken!!
                 redditExpireTime = System.currentTimeMillis() + (authResp.body()?.expiresIn!! * 1000)

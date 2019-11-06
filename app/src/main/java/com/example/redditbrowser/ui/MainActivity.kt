@@ -22,6 +22,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.preference.PreferenceManager
 import com.example.redditbrowser.R
+import com.example.redditbrowser.apis.ApiFetcher
+import com.example.redditbrowser.apis.AuthValues
 import com.example.redditbrowser.datastructs.Feed
 import com.example.redditbrowser.utils.ServiceProvider
 import com.example.redditbrowser.web.HttpClientBuilder
@@ -44,6 +46,8 @@ class MainActivity : AppCompatActivity(),
         const val LIST = 0
         const val SINGLE = 1
         const val DEFAULT_MODE = LIST
+
+        const val DEFAULT_ACCOUNT = AuthValues.defaultAccount
     }
 
     private lateinit var feedModel: FeedViewModel
@@ -101,6 +105,10 @@ class MainActivity : AppCompatActivity(),
 
         val cacheSize: Long = 250 * 1024 * 1024  // 250 MiB
         HttpClientBuilder.setCache(Cache(cacheDir, cacheSize))
+
+        val username = PreferenceManager.getDefaultSharedPreferences(this)
+            .getString("accountName", DEFAULT_ACCOUNT)
+        ApiFetcher.setCredentials(username)
 
         initTheme()
         feedModel = getFeedViewModel()
