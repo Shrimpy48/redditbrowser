@@ -26,6 +26,7 @@ class ImagePostViewHolder(
     private val subredditView = cardView.subredditView
     private val authorView = cardView.authorView
     private val imageView = cardView.imageView
+    private val typeIcon = cardView.typeIcon
 
     private var post: Post? = null
 
@@ -48,6 +49,11 @@ class ImagePostViewHolder(
         titleView.text = post?.title ?: context.getString(R.string.post_loading)
         subredditView.text = post?.subreddit ?: ""
         authorView.text = post?.author ?: ""
+
+        if (post?.type == Post.VIDEO)
+            typeIcon.setImageDrawable(context.getDrawable(R.drawable.ic_gif_white_24dp))
+        else
+            typeIcon.setImageDrawable(context.getDrawable(R.drawable.ic_image_white_24dp))
 
         if (post != null) showImage(post, clickCallback)
     }

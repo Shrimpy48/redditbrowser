@@ -95,7 +95,7 @@ class PostsAdapter(
         return when (getItem(position)?.type) {
             Post.TEXT -> R.layout.text_post
             Post.IMAGE -> R.layout.image_post
-            Post.VIDEO -> R.layout.video_post
+            Post.VIDEO -> if (autoPlay) R.layout.video_post else R.layout.image_post
             Post.VIDEO_DASH -> R.layout.video_post
             Post.EMBED -> if (useWebView) R.layout.embed_post else R.layout.url_post
             Post.EMBED_HTML -> if (useWebView) R.layout.embed_post else R.layout.url_post
